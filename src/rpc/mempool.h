@@ -14,4 +14,7 @@ UniValue MempoolInfoToJSON(const CTxMemPool& pool);
 /** Mempool to JSON */
 UniValue MempoolToJSON(const CTxMemPool& pool, bool verbose = false, bool include_mempool_sequence = false);
 
+/** Mempool tx to JSON (hex)*/
+UniValue MempoolTxToJSON(const CTxMemPool& pool);
+
 #endif // BITCOIN_RPC_MEMPOOL_H

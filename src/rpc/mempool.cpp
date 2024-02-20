@@ -429,6 +429,43 @@ static RPCHelpMan getrawmempool()
     };
 }
 
+UniValue MempoolTxToJSON(const CTxMemPool& pool)
+{
+    std::vector<CTransactionRef> vtx;
+    {
+        LOCK(pool.cs);
+        pool.queryTransactions(vtx);
+    }
+    UniValue a(UniValue::VARR);
+    for (const CTransactionRef& tx : vtx)
+        a.push_back(EncodeHexTx(*tx));
+
+    return a;
+}
+
+static RPCHelpMan getrawtxmempool()
+{
+    return RPCHelpMan{"getrawtxmempool",
+        "\nReturns all transaction hex in memory pool as a json array of string transaction hex.\n",
+        {
+        },
+        RPCResult{"for verbose = false",
+            RPCResult::Type::ARR, "", "",
+            {
+                {RPCResult::Type::STR_HEX, "", "The transaction hex"},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("getrawtxmempool", "")
+            + HelpExampleRpc("getrawtxmempool", "")
+        },
+        [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
+{
+    return MempoolTxToJSON(EnsureAnyMemPool(request.context));
+},
+    };
+}
+
 static RPCHelpMan getmempoolancestors()
 {
     return RPCHelpMan{"getmempoolancestors",
@@ -1135,6 +1172,7 @@ void RegisterMempoolRPCCommands(CRPCTable& t)
         {"blockchain", &getmempoolinfo},
         {"blockchain", &getrawmempool},
         {"blockchain", &importmempool},
+        {"blockchain", &getrawtxmempool},
         {"blockchain", &savemempool},
         {"hidden", &getorphantxs},
         {"rawtransactions", &submitpackage},
