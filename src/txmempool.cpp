@@ -861,6 +861,19 @@ void CTxMemPool::queryHashes(std::vector<uint256>& vtxid) const
     }
 }
 
+void CTxMemPool::queryTransactions(std::vector<CTransactionRef>& vtx) const
+{
+    LOCK(cs);
+    auto iters = GetSortedDepthAndScore();
+
+    vtx.clear();
+    vtx.reserve(mapTx.size());
+
+    for (auto it : iters) {
+        vtx.push_back(it->GetSharedTx());
+    }
+}
+
 static TxMempoolInfo GetInfo(CTxMemPool::indexed_transaction_set::const_iterator it) {
     return TxMempoolInfo{it->GetSharedTx(), it->GetTime(), it->GetFee(), it->GetTxSize(), it->GetModifiedFee() - it->GetFee()};
 }
