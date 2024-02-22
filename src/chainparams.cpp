@@ -133,6 +133,7 @@ public:
 
         vFixedSeeds.clear();
 
+        fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         m_is_test_chain = false;
@@ -235,7 +236,7 @@ public:
 
         bech32_hrp = "tb";
 
-
+        fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         m_is_test_chain = true;
@@ -361,6 +362,7 @@ public:
 
         bech32_hrp = "tb";
 
+        fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         m_is_test_chain = true;
@@ -427,6 +429,7 @@ public:
         vSeeds.clear();
         vSeeds.emplace_back("dummySeed.invalid.");
 
+        fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = true;
         fRequireStandard = true;
         m_is_test_chain = true;
