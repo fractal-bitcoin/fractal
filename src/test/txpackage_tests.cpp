@@ -611,7 +611,7 @@ BOOST_FIXTURE_TEST_CASE(package_cpfp_tests, TestChain100Setup)
     CScript child_spk = GetScriptForDestination(WitnessV0KeyHash(grandchild_key.GetPubKey()));
 
     // zero-fee parent and high-fee child package
-    const CAmount coinbase_value{50 * COIN};
+    const CAmount coinbase_value{25 * COIN};
     const CAmount parent_value{coinbase_value - 0};
     const CAmount child_value{parent_value - COIN};
 
