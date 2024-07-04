@@ -95,6 +95,10 @@ public:
 
         consensus.nMinimumChainWork = uint256S("");
         consensus.defaultAssumeValid = uint256S("");
+        consensus.nAuxpowChainId = 0x0001;
+        consensus.nAuxpowStartHeight = 19200;
+        consensus.fStrictChainId = true;
+        consensus.nLegacyBlocksBefore = 19200;
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -198,6 +202,11 @@ public:
 
         consensus.nMinimumChainWork = uint256S("");
         consensus.defaultAssumeValid = uint256S("");
+
+        consensus.nAuxpowStartHeight = 0;
+        consensus.nAuxpowChainId = 0x0001;
+        consensus.fStrictChainId = false;
+        consensus.nLegacyBlocksBefore = -1;
 
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
@@ -327,6 +336,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
 
+        consensus.nAuxpowStartHeight = 0;
+        consensus.nAuxpowChainId = 0x0001;
+        consensus.fStrictChainId = true;
+        consensus.nLegacyBlocksBefore = 0;
         // message start is defined as the first 4 bytes of the sha256d of the block script
         HashWriter h{};
         h << consensus.signet_challenge;
@@ -397,6 +410,11 @@ public:
 
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
+
+        consensus.nAuxpowStartHeight = 0;
+        consensus.nAuxpowChainId = 0x0001;
+        consensus.fStrictChainId = true;
+        consensus.nLegacyBlocksBefore = 0;
 
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0xbf;

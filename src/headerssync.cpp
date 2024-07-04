@@ -29,7 +29,7 @@ HeadersSyncState::HeadersSyncState(NodeId id, const Consensus::Params& consensus
     m_minimum_required_work(minimum_required_work),
     m_current_chain_work(chain_start->nChainWork),
     m_commit_offset(GetRand<unsigned>(HEADER_COMMITMENT_PERIOD)),
-    m_last_header_received(m_chain_start->GetBlockHeader()),
+    m_last_header_received(m_chain_start->GetPureHeader()),
     m_current_height(chain_start->nHeight)
 {
     // Estimate the number of blocks that could possibly exist on the peer's
@@ -174,7 +174,7 @@ bool HeadersSyncState::ValidateAndStoreHeadersCommitments(const std::vector<CBlo
     return true;
 }
 
-bool HeadersSyncState::ValidateAndProcessSingleHeader(const CBlockHeader& current)
+bool HeadersSyncState::ValidateAndProcessSingleHeader(const CPureBlockHeader& current)
 {
     Assume(m_download_state == State::PRESYNC);
     if (m_download_state != State::PRESYNC) return false;
