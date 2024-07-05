@@ -148,7 +148,7 @@ struct Params {
     int32_t nAuxpowChainId;
     int nAuxpowStartHeight;
     bool fStrictChainId;
-    int nLegacyBlocksBefore; // -1 for "always allow"
+    int nLegacyBlocksCycle; // 0 for "always allow"
 
     /**
      * Check whether or not to allow legacy blocks at the given height.
@@ -157,9 +157,9 @@ struct Params {
      */
     bool AllowLegacyBlocks(unsigned nHeight) const
     {
-        if (nLegacyBlocksBefore < 0)
+        if (nLegacyBlocksCycle <= 0)
             return true;
-        return static_cast<int> (nHeight) < nLegacyBlocksBefore;
+        return static_cast<int> (nHeight) % nLegacyBlocksCycle != 0;
     }
 
 };
