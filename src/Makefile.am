@@ -233,6 +233,7 @@ BITCOIN_CORE_H = \
   rpc/mempool.h \
   rpc/mining.h \
   rpc/protocol.h \
+  rpc/rawtransaction.h \
   rpc/rawtransaction_util.h \
   rpc/register.h \
   rpc/request.h \
