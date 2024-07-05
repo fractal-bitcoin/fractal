@@ -466,7 +466,7 @@ static RPCHelpMan getmininginfo()
     if (BlockAssembler::m_last_block_weight) obj.pushKV("currentblockweight", *BlockAssembler::m_last_block_weight);
     if (BlockAssembler::m_last_block_num_txs) obj.pushKV("currentblocktx", *BlockAssembler::m_last_block_num_txs);
     obj.pushKV("bits", strprintf("%08x", tip.nBits));
-    obj.pushKV("difficulty", GetDifficulty(tip));
+    obj.pushKV("difficulty",       (double)GetDifficultyForBits(tip.nBits));
     obj.pushKV("target", GetTarget(tip, chainman.GetConsensus().powLimit).GetHex());
     obj.pushKV("networkhashps",    getnetworkhashps().HandleRequest(request));
     obj.pushKV("pooledtx",         (uint64_t)mempool.size());
@@ -478,7 +478,7 @@ static RPCHelpMan getmininginfo()
 
     next.pushKV("height", next_index.nHeight);
     next.pushKV("bits", strprintf("%08x", next_index.nBits));
-    next.pushKV("difficulty", GetDifficulty(next_index));
+    next.pushKV("difficulty", (double)GetDifficultyForBits(next_index.nBits));
     next.pushKV("target", GetTarget(next_index, chainman.GetConsensus().powLimit).GetHex());
     obj.pushKV("next", next);
 
@@ -766,7 +766,7 @@ static RPCHelpMan getblocktemplate()
 
     if (!miner.isTestChain()) {
         const CConnman& connman = EnsureConnman(node);
-        if (connman.GetNodeCount(ConnectionDirection::Both) == 0 && chainman.GetParams().MiningRequiresPeers()) {
+        if (connman.GetNodeCount(ConnectionDirection::Both) == 0) {
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, CLIENT_NAME " is not connected!");
         }
 

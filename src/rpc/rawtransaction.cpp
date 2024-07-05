@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <rpc/rawtransaction.h>
+
 #include <base58.h>
 #include <chain.h>
 #include <coins.h>
@@ -53,9 +55,7 @@ using node::GetTransaction;
 using node::NodeContext;
 using node::PSBTAnalysis;
 
-static void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry,
-                     Chainstate& active_chainstate, const CTxUndo* txundo = nullptr,
-                     TxVerbosity verbosity = TxVerbosity::SHOW_DETAILS)
+void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, Chainstate& active_chainstate, const CTxUndo* txundo, TxVerbosity verbosity)
 {
     CHECK_NONFATAL(verbosity >= TxVerbosity::SHOW_DETAILS);
     // Call into TxToUniv() in bitcoin-common to decode the transaction hex.
