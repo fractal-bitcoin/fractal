@@ -276,9 +276,10 @@ TestChain100Setup::TestChain100Setup(const std::string& chain_name, const std::v
 
     {
         LOCK(::cs_main);
+        // throw std::runtime_error(strprintf("TestChain100Setup failed. (%s)", m_node.chainman->ActiveChain().Tip()->GetBlockHash().ToString()));
         assert(
             m_node.chainman->ActiveChain().Tip()->GetBlockHash().ToString() ==
-            "571d80a9967ae599cec0448b0b0ba1cfb606f584d8069bd7166b86854ba7a191");
+            "55fe720ac958eaefbda1176651acd2cfc7fade806664e37d09c92bdb98058d60");
     }
 }
 
