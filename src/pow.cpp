@@ -10,40 +10,167 @@
 #include <primitives/block.h>
 #include <uint256.h>
 
+/**
+ * Compute the next required proof of work using an absolutely scheduled
+ * exponentially weighted target (ASERT).
+ *
+ * With ASERT, we define an ideal schedule for block issuance (e.g. 1 block every 600 seconds), and we calculate the
+ * difficulty based on how far the most recent block's timestamp is ahead of or behind that schedule.
+ * We set our targets (difficulty) exponentially. For every [nHalfLife] seconds ahead of or behind schedule we get, we
+ * double or halve the difficulty.
+ */
+static uint32_t GetNextASERTWorkRequired(const CBlockIndex *pindexPrev,
+                                         const CBlockHeader *pblock,
+                                         const Consensus::Params &params) noexcept {
+    // This cannot handle the genesis block and early blocks in general.
+    assert(pindexPrev != nullptr);
+
+    const Consensus::Params::ASERTAnchor &anchorParams = params.asertAnchorParams;
+
+    // We make no further assumptions other than the height of the prev block must be >= that of the anchor block.
+    assert(anchorParams.nHeight > 0);
+    assert(pindexPrev->nHeight > anchorParams.nHeight);
+
+    const arith_uint256 powLimit = UintToArith256(params.powLimit);
+
+    // For nTimeDiff calculation, the timestamp of the parent to the anchor block is used,
+    // as per the absolute formulation of ASERT.
+    // This is somewhat counterintuitive since it is referred to as the anchor timestamp, but
+    // as per the formula the timestamp of block M-1 must be used if the anchor is M.
+    assert(pindexPrev->pprev != nullptr);
+
+    const arith_uint256 refBlockTarget = arith_uint256().SetCompact(anchorParams.nBits);
+
+    // Time difference is from anchor block's timestamp
+    const int64_t nTimeDiff = pindexPrev->GetBlockTime() - anchorParams.nBlockTime;
+    // Height difference is from current block to anchor block
+    const int nHeightDiff = pindexPrev->nHeight - anchorParams.nHeight;
+
+    // Do the actual target adaptation calculation in separate
+    // CalculateASERT() function
+    arith_uint256 nextTarget = CalculateASERT(refBlockTarget,
+                                              params.nPowTargetSpacing,
+                                              nTimeDiff,
+                                              nHeightDiff,
+                                              powLimit,
+                                              params.nASERTHalfLife);
+
+    // CalculateASERT() already clamps to powLimit.
+    return nextTarget.GetCompact();
+}
+
+// ASERT calculation function.
+// Clamps to powLimit.
+arith_uint256 CalculateASERT(const arith_uint256 &refTarget,
+                             const int64_t nPowTargetSpacing,
+                             const int64_t nTimeDiff,
+                             const int64_t nHeightDiff,
+                             const arith_uint256 &powLimit,
+                             const int64_t nHalfLife) noexcept {
+
+    // Input target must never be zero nor exceed powLimit.
+    assert(refTarget > 0 && refTarget <= powLimit);
+
+    // We need some leading zero bits in powLimit in order to have room to handle
+    // overflows easily. 32 leading zero bits is more than enough.
+    assert((powLimit >> 224) == 0);
+
+    // Height diff should NOT be negative.
+    assert(nHeightDiff > 0);
+
+    // It will be helpful when reading what follows, to remember that
+    // nextTarget is adapted from anchor block target value.
+
+    // Ultimately, we want to approximate the following ASERT formula, using only integer (fixed-point) math:
+    //     new_target = old_target * 2^((blocks_time - IDEAL_BLOCK_TIME * (height_diff + 1)) / nHalfLife)
+
+    // First, we'll calculate the exponent:
+    assert( llabs(nTimeDiff - nPowTargetSpacing * nHeightDiff) < (1ll << (63 - 16)) );
+    const int64_t exponent = ((nTimeDiff - nPowTargetSpacing * (nHeightDiff)) * 65536) / nHalfLife;
+
+    // Next, we use the 2^x = 2 * 2^(x-1) identity to shift our exponent into the [0, 1) interval.
+    // The truncated exponent tells us how many shifts we need to do
+    // Note1: This needs to be a right shift. Right shift rounds downward (floored division),
+    //        whereas integer division in C++ rounds towards zero (truncated division).
+    // Note2: This algorithm uses arithmetic shifts of negative numbers. This
+    //        is unpecified but very common behavior for C++ compilers before
+    //        C++20, and standard with C++20. We must check this behavior e.g.
+    //        using static_assert.
+    static_assert(int64_t(-1) >> 1 == int64_t(-1),
+                  "ASERT algorithm needs arithmetic shift support");
+
+    // Now we compute an approximated target * 2^(exponent/65536.0)
+
+    // First decompose exponent into 'integer' and 'fractional' parts:
+    int64_t shifts = exponent >> 16;
+    const auto frac = uint16_t(exponent);
+    assert(exponent == (shifts * 65536) + frac);
+
+    // multiply target by 65536 * 2^(fractional part)
+    // 2^x ~= (1 + 0.695502049*x + 0.2262698*x**2 + 0.0782318*x**3) for 0 <= x < 1
+    // Error versus actual 2^x is less than 0.013%.
+    const uint32_t factor = 65536 + ((
+        + 195766423245049ull * frac
+        + 971821376ull * frac * frac
+        + 5127ull * frac * frac * frac
+        + (1ull << 47)
+        ) >> 48);
+    // this is always < 2^241 since refTarget < 2^224
+    arith_uint256 nextTarget = refTarget * factor;
+
+    // multiply by 2^(integer part) / 65536
+    shifts -= 16;
+    if (shifts <= 0) {
+        nextTarget >>= -shifts;
+    } else {
+        // Detect overflow that would discard high bits
+        const auto nextTargetShifted = nextTarget << shifts;
+        if ((nextTargetShifted >> shifts) != nextTarget) {
+            // If we had wider integers, the final value of nextTarget would
+            // be >= 2^256 so it would have just ended up as powLimit anyway.
+            nextTarget = powLimit;
+        } else {
+            // Shifting produced no overflow, can assign value
+            nextTarget = nextTargetShifted;
+        }
+    }
+
+    if (nextTarget == 0) {
+        // 0 is not a valid target, but 1 is.
+        nextTarget = arith_uint256(1);
+    } else if (nextTarget > powLimit) {
+        nextTarget = powLimit;
+    }
+
+    // we return from only 1 place for copy elision
+    return nextTarget;
+}
+
+
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     assert(pindexLast != nullptr);
-    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
-    // Only change once per difficulty adjustment interval
-    if ((pindexLast->nHeight+1) % params.DifficultyAdjustmentInterval() != 0)
-    {
-        if (params.fPowAllowMinDifficultyBlocks)
-        {
-            // Special difficulty rule for testnet:
-            // If the new block's timestamp is more than 2* 10 minutes
-            // then allow mining of a min-difficulty block.
-            if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2)
-                return nProofOfWorkLimit;
-            else
-            {
-                // Return the last non-special-min-difficulty-rules-block
-                const CBlockIndex* pindex = pindexLast;
-                while (pindex->pprev && pindex->nHeight % params.DifficultyAdjustmentInterval() != 0 && pindex->nBits == nProofOfWorkLimit)
-                    pindex = pindex->pprev;
-                return pindex->nBits;
-            }
-        }
+    // Special rule for regtest: we never retarget.
+    if (params.fPowNoRetargeting) {
         return pindexLast->nBits;
     }
 
-    // Go back by what we want to be 14 days worth of blocks
-    int nHeightFirst = pindexLast->nHeight - (params.DifficultyAdjustmentInterval()-1);
-    assert(nHeightFirst >= 0);
-    const CBlockIndex* pindexFirst = pindexLast->GetAncestor(nHeightFirst);
-    assert(pindexFirst);
+    assert(params.asertAnchorParams.nHeight > 0);
+    if (pindexLast->nHeight <= params.asertAnchorParams.nHeight) {
+        return params.asertAnchorParams.nBits;
+    }
 
-    return CalculateNextWorkRequired(pindexLast, pindexFirst->GetBlockTime(), params);
+    // Special difficulty rule for testnet
+    // If the new block's timestamp is more than 2 * 10 minutes then allow
+    // mining of a min-difficulty block.
+    if (params.fPowAllowMinDifficultyBlocks &&
+        (pblock->GetBlockTime() >
+         pindexLast->GetBlockTime() + 2 * params.nPowTargetSpacing)) {
+        return UintToArith256(params.powLimit).GetCompact();
+    }
+
+    return GetNextASERTWorkRequired(pindexLast, pblock, params);
 }
 
 unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params& params)

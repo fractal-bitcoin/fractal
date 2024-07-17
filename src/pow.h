@@ -7,6 +7,7 @@
 #define BITCOIN_POW_H
 
 #include <consensus/params.h>
+#include <arith_uint256.h>
 
 #include <stdint.h>
 
@@ -33,5 +34,13 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
  * such as regtest/testnet.
  */
 bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t height, uint32_t old_nbits, uint32_t new_nbits);
+
+
+arith_uint256 CalculateASERT(const arith_uint256 &refTarget,
+                             const int64_t nPowTargetSpacing,
+                             const int64_t nTimeDiff,
+                             const int64_t nHeightDiff,
+                             const arith_uint256 &powLimit,
+                             const int64_t nHalfLife) noexcept;
 
 #endif // BITCOIN_POW_H

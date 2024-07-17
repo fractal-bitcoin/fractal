@@ -109,6 +109,7 @@ struct Params {
     bool fPowAllowMinDifficultyBlocks;
     bool fPowNoRetargeting;
     int64_t nPowTargetSpacing;
+    int64_t nASERTHalfLife;
     int64_t nPowTargetTimespan;
     std::chrono::seconds PowTargetSpacing() const
     {
@@ -119,6 +120,17 @@ struct Params {
     uint256 nMinimumChainWork;
     /** By default assume that the signatures in ancestors of this block are valid */
     uint256 defaultAssumeValid;
+
+    /** Used by the ASERT DAA activated */
+    struct ASERTAnchor {
+        int nHeight;
+        uint32_t nBits;
+        uint32_t nBitsAuxPow;
+        int64_t nBlockTime;
+    };
+
+    /** For chains with a checkpoint after the ASERT anchor block, this is always defined */
+    ASERTAnchor asertAnchorParams;
 
     /**
      * If true, witness commitments contain a payload equal to a Bitcoin Script solution

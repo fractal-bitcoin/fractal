@@ -82,6 +82,12 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 2592; // 90% of 2880
         consensus.nMinerConfirmationWindow = 2880; // nPowTargetTimespan / nPowTargetSpacing
+
+        // The half life for the ASERT DAA. For every (nASERTHalfLife) seconds behind schedule the blockchain gets,
+        // difficulty is cut in half. Doubled if blocks are ahead of schedule.
+        // three hours
+        consensus.nASERTHalfLife = 3 * 60 * 60;
+
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
@@ -100,6 +106,14 @@ public:
         consensus.nAuxpowStartHeight = 3;
         consensus.fStrictChainId = true;
         consensus.nLegacyBlocksCycle = 3;
+
+        // Anchor params: Note that the block after this height *must* also be checkpointed below.
+        consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
+            1,            // anchor block height
+            0x1804dafe,   // anchor block nBits
+            0x1804dafe,   // anchor block nBits for auxpow
+            1605447844,   // anchor block previous block timestamp
+        };
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -190,6 +204,12 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 2160; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2880; // nPowTargetTimespan / nPowTargetSpacing
+
+        // The half life for the ASERT DAA. For every (nASERTHalfLife) seconds behind schedule the blockchain gets,
+        // difficulty is cut in half. Doubled if blocks are ahead of schedule.
+        // five minutes
+        consensus.nASERTHalfLife = 5 * 60;
+
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
@@ -208,6 +228,14 @@ public:
         consensus.nAuxpowChainId = 0x0003;
         consensus.fStrictChainId = false;
         consensus.nLegacyBlocksCycle = 3;
+
+        // Anchor params: Note that the block after this height *must* also be checkpointed below.
+        consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
+            1,      // anchor block height
+            0x1d00ffff,   // anchor block nBits
+            0x1d00ffff,   // anchor block nBits for auxpow
+            1605445400,   // anchor block previous block timestamp
+        };
 
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
@@ -324,6 +352,12 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 2592; // 90% of 2880
         consensus.nMinerConfirmationWindow = 2880; // nPowTargetTimespan / nPowTargetSpacing
+
+        // The half life for the ASERT DAA. For every (nASERTHalfLife) seconds behind schedule the blockchain gets,
+        // difficulty is cut in half. Doubled if blocks are ahead of schedule.
+        // three hours
+        consensus.nASERTHalfLife = 3 * 60 * 60;
+
         consensus.MinBIP9WarningHeight = 0;
         consensus.powLimit = uint256S("00000377ae000000000000000000000000000000000000000000000000000000");
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -341,6 +375,16 @@ public:
         consensus.nAuxpowChainId = 0x0003;
         consensus.fStrictChainId = true;
         consensus.nLegacyBlocksCycle = 3;
+
+        // Anchor params: Note that the block after this height *must* also be checkpointed below.
+        consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
+            1,      // anchor block height
+            0x1d00ffff,   // anchor block nBits
+            0x1d00ffff,   // anchor block nBits for auxpow
+            1605445400,   // anchor block previous block timestamp
+        };
+
+
         // message start is defined as the first 4 bytes of the sha256d of the block script
         HashWriter h{};
         h << consensus.signet_challenge;
@@ -399,6 +443,11 @@ public:
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2880)
 
+        // The half life for the ASERT DAA. For every (nASERTHalfLife) seconds behind schedule the blockchain gets,
+        // difficulty is cut in half. Doubled if blocks are ahead of schedule.
+        // three hours
+        consensus.nASERTHalfLife = 3 * 60 * 60;
+
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
@@ -416,6 +465,9 @@ public:
         consensus.nAuxpowChainId = 0x0003;
         consensus.fStrictChainId = true;
         consensus.nLegacyBlocksCycle = 3;
+
+        // RegTest has no hard-coded anchor block
+        // consensus.asertAnchorParams.reset();
 
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0xbf;
