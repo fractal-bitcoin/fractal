@@ -105,7 +105,6 @@ public:
         consensus.nAuxpowChainId = 0x0003;
         consensus.nAuxpowStartHeight = 3;
         consensus.fStrictChainId = true;
-        consensus.nLegacyBlocksCycle = 3;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
@@ -227,7 +226,6 @@ public:
         consensus.nAuxpowStartHeight = 3;
         consensus.nAuxpowChainId = 0x0003;
         consensus.fStrictChainId = false;
-        consensus.nLegacyBlocksCycle = 3;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
@@ -374,7 +372,6 @@ public:
         consensus.nAuxpowStartHeight = 3;
         consensus.nAuxpowChainId = 0x0003;
         consensus.fStrictChainId = true;
-        consensus.nLegacyBlocksCycle = 3;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
@@ -464,7 +461,6 @@ public:
         consensus.nAuxpowStartHeight = 3;
         consensus.nAuxpowChainId = 0x0003;
         consensus.fStrictChainId = true;
-        consensus.nLegacyBlocksCycle = 3;
 
         // RegTest has no hard-coded anchor block
         // consensus.asertAnchorParams.reset();

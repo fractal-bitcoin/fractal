@@ -3517,12 +3517,7 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
     assert(pindexPrev != nullptr);
     const int nHeight = pindexPrev->nHeight + 1;
 
-    // Disallow legacy blocks on merge-mining height.
     const Consensus::Params& consensusParams = chainman.GetConsensus();
-    if (!consensusParams.AllowLegacyBlocks(nHeight) && block.IsLegacy())
-        return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER,
-                             "late-legacy-block",
-                             "legacy block after auxpow start");
 
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))

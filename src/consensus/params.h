@@ -160,20 +160,6 @@ struct Params {
     int32_t nAuxpowChainId;
     int nAuxpowStartHeight;
     bool fStrictChainId;
-    int nLegacyBlocksCycle; // 0 for "always allow"
-
-    /**
-     * Check whether or not to allow legacy blocks at the given height.
-     * @param nHeight Height of the block to check.
-     * @return True if it is allowed to have a legacy version.
-     */
-    bool AllowLegacyBlocks(unsigned nHeight) const
-    {
-        if (nLegacyBlocksCycle <= 0)
-            return true;
-        return static_cast<int> (nHeight) % nLegacyBlocksCycle != 0;
-    }
-
 };
 
 } // namespace Consensus
