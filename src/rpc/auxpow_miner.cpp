@@ -73,8 +73,7 @@ AuxpowMiner::getCurrentBlock (const ChainstateManager& chainman,
 
         /* Create new block with nonce = 0 and extraNonce = 1.  */
         std::unique_ptr<node::CBlockTemplate> newBlock
-            = BlockAssembler (chainman.ActiveChainstate (), &mempool)
-                .CreateNewBlock (scriptPubKey);
+            = BlockAssembler (chainman.ActiveChainstate (), &mempool).CreateNewBlock (scriptPubKey, true);
         if (newBlock == nullptr)
           throw JSONRPCError (RPC_OUT_OF_MEMORY, "out of memory");
 
@@ -86,6 +85,8 @@ AuxpowMiner::getCurrentBlock (const ChainstateManager& chainman,
         /* Finalise it by setting the version and building the merkle root.  */
         newBlock->block.hashMerkleRoot = BlockMerkleRoot (newBlock->block);
         newBlock->block.SetAuxpowVersion (true);
+        newBlock->block.SetChainId (Params().GetConsensus().nAuxpowChainId);
+
 
         /* Save in our map of constructed blocks.  */
         pblockCur = &newBlock->block;
