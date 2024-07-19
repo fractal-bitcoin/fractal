@@ -115,6 +115,8 @@ struct Params {
     bool enforce_BIP94;
     bool fPowNoRetargeting;
     int64_t nPowTargetSpacing;
+    int64_t nPowTargetSpacingLegacy;
+    int64_t nPowTargetSpacingAuxPow;
     int64_t nASERTHalfLife;
     int64_t nPowTargetTimespan;
     std::chrono::seconds PowTargetSpacing() const
@@ -130,7 +132,7 @@ struct Params {
     /** Used by the ASERT DAA activated */
     struct ASERTAnchor {
         int nHeight;
-        uint32_t nBits;
+        uint32_t nBitsLegacy;
         uint32_t nBitsAuxPow;
         int64_t nBlockTime;
     };
@@ -164,7 +166,6 @@ struct Params {
 
     /** Auxpow parameters */
     int32_t nAuxpowChainId;
-    int nAuxpowStartHeight;
     bool fStrictChainId;
 };
 
