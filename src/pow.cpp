@@ -39,7 +39,13 @@ static uint32_t GetNextASERTWorkRequired(const CBlockIndex *pindexPrev,
     // as per the formula the timestamp of block M-1 must be used if the anchor is M.
     assert(pindexPrev->pprev != nullptr);
 
-    const arith_uint256 refBlockTarget = arith_uint256().SetCompact(anchorParams.nBits);
+    uint32_t anchornBits = anchorParams.nBitsLegacy;
+    int64_t nPowTargetSpacing = params.nPowTargetSpacingLegacy;
+    if (pblock->IsAuxpow()) {
+        anchornBits = anchorParams.nBitsAuxPow;
+        nPowTargetSpacing = params.nPowTargetSpacingAuxPow;
+    }
+    const arith_uint256 refBlockTarget = arith_uint256().SetCompact(anchornBits);
 
     // Time difference is from anchor block's timestamp
     const int64_t nTimeDiff = pindexPrev->GetBlockTime() - anchorParams.nBlockTime;
@@ -49,7 +55,7 @@ static uint32_t GetNextASERTWorkRequired(const CBlockIndex *pindexPrev,
     // Do the actual target adaptation calculation in separate
     // CalculateASERT() function
     arith_uint256 nextTarget = CalculateASERT(refBlockTarget,
-                                              params.nPowTargetSpacing,
+                                              nPowTargetSpacing,
                                               nTimeDiff,
                                               nHeightDiff,
                                               powLimit,
@@ -158,7 +164,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     assert(params.asertAnchorParams.nHeight > 0);
     if (pindexLast->nHeight <= params.asertAnchorParams.nHeight) {
-        return params.asertAnchorParams.nBits;
+        return params.asertAnchorParams.nBitsLegacy;
     }
 
     // Special difficulty rule for testnet
@@ -166,11 +172,25 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // mining of a min-difficulty block.
     if (params.fPowAllowMinDifficultyBlocks &&
         (pblock->GetBlockTime() >
-         pindexLast->GetBlockTime() + 2 * params.nPowTargetSpacing)) {
+         pindexLast->GetBlockTime() + 2 * params.nPowTargetSpacingAuxPow)) {
         return UintToArith256(params.powLimit).GetCompact();
     }
 
-    return GetNextASERTWorkRequired(pindexLast, pblock, params);
+    // Slow path: walk back until we find the first same version block
+    const CBlockIndex *pindexPrev = pindexLast;
+
+    while (pindexPrev->GetPureHeader().IsAuxpow() != pblock->IsAuxpow()) {
+        if (pindexPrev->nHeight <= params.asertAnchorParams.nHeight) {
+            if (pblock->IsAuxpow()) {
+                return params.asertAnchorParams.nBitsAuxPow;
+            } else {
+                return params.asertAnchorParams.nBitsLegacy;
+            }
+        }
+        pindexPrev = pindexPrev->pprev;
+    }
+
+    return GetNextASERTWorkRequired(pindexPrev, pblock, params);
 }
 
 unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params& params)

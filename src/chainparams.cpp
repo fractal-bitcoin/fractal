@@ -78,6 +78,8 @@ public:
         consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 24 * 60 * 60; // one day
         consensus.nPowTargetSpacing = 30;
+        consensus.nPowTargetSpacingLegacy = 45;
+        consensus.nPowTargetSpacingAuxPow = 90;
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 2592; // 90% of 2880
@@ -102,16 +104,15 @@ public:
         consensus.nMinimumChainWork = uint256S("");
         consensus.defaultAssumeValid = uint256S("");
 
-        consensus.nAuxpowChainId = 0x0003;
-        consensus.nAuxpowStartHeight = 3;
+        consensus.nAuxpowChainId = 0x2024;
         consensus.fStrictChainId = true;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
             1,            // anchor block height
-            0x1804dafe,   // anchor block nBits
-            0x1804dafe,   // anchor block nBits for auxpow
-            1605447844,   // anchor block previous block timestamp
+            0x1d00ffff,   // anchor block nBits
+            0x1d00ffff,   // anchor block nBits for auxpow
+            1721369687,   // anchor block previous block timestamp
         };
 
         /**
@@ -160,7 +161,7 @@ public:
         checkpointData = {
             {
                 {0, uint256S("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
-                {1, uint256S("00000000067e53da31878d29e76cc124468892658f1c763ab047c0c1fcfc73f5")},
+                {1, uint256S("000000008fbbbe27a3e408afd8178e22de95253b52f7fc4372cb6e3cd5aa0ebc")},
             }
         };
 
@@ -199,6 +200,8 @@ public:
         consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 24 * 60 * 60; // one day
         consensus.nPowTargetSpacing = 30;
+        consensus.nPowTargetSpacingLegacy = 45;
+        consensus.nPowTargetSpacingAuxPow = 90;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 2160; // 75% for testchains
@@ -223,16 +226,15 @@ public:
         consensus.nMinimumChainWork = uint256S("");
         consensus.defaultAssumeValid = uint256S("");
 
-        consensus.nAuxpowStartHeight = 3;
-        consensus.nAuxpowChainId = 0x0003;
+        consensus.nAuxpowChainId = 0x2024;
         consensus.fStrictChainId = false;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
-            1,      // anchor block height
+            1,            // anchor block height
             0x1d00ffff,   // anchor block nBits
             0x1d00ffff,   // anchor block nBits for auxpow
-            1605445400,   // anchor block previous block timestamp
+            1721369687,   // anchor block previous block timestamp
         };
 
         pchMessageStart[0] = 0x0b;
@@ -346,6 +348,8 @@ public:
         consensus.SegwitHeight = 1;
         consensus.nPowTargetTimespan = 24 * 60 * 60; // one day
         consensus.nPowTargetSpacing = 30;
+        consensus.nPowTargetSpacingLegacy = 45;
+        consensus.nPowTargetSpacingAuxPow = 90;
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 2592; // 90% of 2880
@@ -369,8 +373,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
 
-        consensus.nAuxpowStartHeight = 3;
-        consensus.nAuxpowChainId = 0x0003;
+        consensus.nAuxpowChainId = 0x2024;
         consensus.fStrictChainId = true;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
@@ -378,7 +381,7 @@ public:
             1,      // anchor block height
             0x1d00ffff,   // anchor block nBits
             0x1d00ffff,   // anchor block nBits for auxpow
-            1605445400,   // anchor block previous block timestamp
+            1721369687,   // anchor block previous block timestamp
         };
 
 
@@ -435,6 +438,8 @@ public:
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 24 * 60 * 60; // one day
         consensus.nPowTargetSpacing = 30;
+        consensus.nPowTargetSpacingLegacy = 45;
+        consensus.nPowTargetSpacingAuxPow = 90;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
@@ -458,8 +463,7 @@ public:
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
 
-        consensus.nAuxpowStartHeight = 3;
-        consensus.nAuxpowChainId = 0x0003;
+        consensus.nAuxpowChainId = 0x2024;
         consensus.fStrictChainId = true;
 
         // RegTest has no hard-coded anchor block
