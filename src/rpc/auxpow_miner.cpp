@@ -74,6 +74,7 @@ AuxpowMiner::getCurrentBlock (const ChainstateManager& chainman, Mining& miner,
         /* Create new block with nonce = 0 and extraNonce = 1.  */
         node::BlockCreateOptions opt;
         opt.coinbase_output_script = scriptPubKey;
+        opt.set_auxpow = true;
         std::unique_ptr<interfaces::BlockTemplate> newTemplate
             = miner.createNewBlock (opt);
         if (newTemplate == nullptr)
@@ -89,6 +90,7 @@ AuxpowMiner::getCurrentBlock (const ChainstateManager& chainman, Mining& miner,
         /* Finalise it by setting the version and building the merkle root.  */
         newBlock.hashMerkleRoot = BlockMerkleRoot (newBlock);
         newBlock.SetAuxpowVersion (true);
+        newBlock.SetChainId (Params().GetConsensus().nAuxpowChainId);
 
         /* Save in our map of constructed blocks.  */
         pblockCur = &newBlock;
