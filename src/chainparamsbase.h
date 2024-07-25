@@ -21,7 +21,6 @@ public:
     /** Chain name strings */
     static const std::string MAIN;
     static const std::string TESTNET;
-    static const std::string SIGNET;
     static const std::string REGTEST;
     ///@}
 
