@@ -120,10 +120,10 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0xf9;
-        pchMessageStart[1] = 0xbe;
-        pchMessageStart[2] = 0xb4;
-        pchMessageStart[3] = 0xd9;
+        pchMessageStart[0] = 0xe8;
+        pchMessageStart[1] = 0xad;
+        pchMessageStart[2] = 0xa3;
+        pchMessageStart[3] = 0xc8;
         nDefaultPort = 8333;
         nPruneAfterHeight = 100000;
         m_assumed_blockchain_size = 496;
@@ -237,10 +237,10 @@ public:
             1721369687,   // anchor block previous block timestamp
         };
 
-        pchMessageStart[0] = 0x0b;
-        pchMessageStart[1] = 0x11;
-        pchMessageStart[2] = 0x09;
-        pchMessageStart[3] = 0x07;
+        pchMessageStart[0] = 0xfa;
+        pchMessageStart[1] = 0x00;
+        pchMessageStart[2] = 0xf8;
+        pchMessageStart[3] = 0xf6;
         nDefaultPort = 18333;
         nPruneAfterHeight = 1000;
         m_assumed_blockchain_size = 42;
@@ -469,10 +469,10 @@ public:
         // RegTest has no hard-coded anchor block
         // consensus.asertAnchorParams.reset();
 
-        pchMessageStart[0] = 0xfa;
-        pchMessageStart[1] = 0xbf;
-        pchMessageStart[2] = 0xb5;
-        pchMessageStart[3] = 0xda;
+        pchMessageStart[0] = 0xe9;
+        pchMessageStart[1] = 0xae;
+        pchMessageStart[2] = 0xa4;
+        pchMessageStart[3] = 0xc9;
         nDefaultPort = 18444;
         nPruneAfterHeight = args.GetBoolArg("-fastprune", false) ? 100 : 1000;
         m_assumed_blockchain_size = 0;
