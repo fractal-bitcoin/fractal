@@ -110,9 +110,9 @@ public:
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
             1,            // anchor block height
-            0x1d00ffff,   // anchor block nBits
-            0x1d00ffff,   // anchor block nBits for auxpow
-            1721369687,   // anchor block previous block timestamp
+            0x1c00ffff,   // anchor block nBits
+            0x190fffff,   // anchor block nBits for auxpow
+            1721916725,   // anchor block previous block timestamp
         };
 
         /**
@@ -161,7 +161,7 @@ public:
         checkpointData = {
             {
                 {0, uint256S("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
-                {1, uint256S("000000008fbbbe27a3e408afd8178e22de95253b52f7fc4372cb6e3cd5aa0ebc")},
+                {1, uint256S("0000000000900858a2064da4485afce3ecc09b25b858bcb8a4cc4909277f8e12")},
             }
         };
 
@@ -232,9 +232,9 @@ public:
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
             1,            // anchor block height
-            0x1d00ffff,   // anchor block nBits
-            0x1d00ffff,   // anchor block nBits for auxpow
-            1721369687,   // anchor block previous block timestamp
+            0x1c00ffff,   // anchor block nBits
+            0x1c00ffff,   // anchor block nBits for auxpow
+            1721916725,   // anchor block previous block timestamp
         };
 
         pchMessageStart[0] = 0xfa;
