@@ -1067,13 +1067,13 @@ bool BlockManager::ReadBlockHeader(CBlockHeader& blockheader, const CBlockIndex&
 bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos) const
 {
     FlatFilePos hpos = pos;
-    // If nPos is less than 8 the pos is null and we don't have the block data
+    // If nPos is less than BLOCK_SERIALIZATION_HEADER_SIZE(12) the pos is null and we don't have the block data
     // Return early to prevent undefined behavior of unsigned int underflow
-    if (hpos.nPos < 8) {
+    if (hpos.nPos < BLOCK_SERIALIZATION_HEADER_SIZE) {
         LogError("%s: OpenBlockFile failed for %s\n", __func__, pos.ToString());
         return false;
     }
-    hpos.nPos -= 8; // Seek back 8 bytes for meta header
+    hpos.nPos -= BLOCK_SERIALIZATION_HEADER_SIZE; // Seek back 12 bytes for meta header
     AutoFile filein{OpenBlockFile(hpos, true)};
     if (filein.IsNull()) {
         LogError("%s: OpenBlockFile failed for %s\n", __func__, pos.ToString());
@@ -1083,13 +1083,20 @@ bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& 
     try {
         MessageStartChars blk_start;
         unsigned int blk_size;
+        unsigned int auxpow_size;
 
-        filein >> blk_start >> blk_size;
+        filein >> blk_start >> blk_size >> auxpow_size;
 
         if (blk_start != GetParams().MessageStart()) {
             LogError("%s: Block magic mismatch for %s: %s versus expected %s\n", __func__, pos.ToString(),
                          HexStr(blk_start),
                          HexStr(GetParams().MessageStart()));
+            return false;
+        }
+
+        if (auxpow_size >= blk_size) {
+            LogError("%s: auxpow data is larger than block size for %s: %s versus %s", __func__, pos.ToString(),
+                         auxpow_size, blk_size);
             return false;
         }
 
@@ -1124,8 +1131,13 @@ FlatFilePos BlockManager::WriteBlock(const CBlock& block, int nHeight)
         return FlatFilePos();
     }
 
+    unsigned int nSizeAuxPow = 0;
+    if (block.IsAuxpow() && block.auxpow != nullptr) {
+        nSizeAuxPow = GetSerializeSize(*block.auxpow);
+    }
+
     // Write index header
-    fileout << GetParams().MessageStart() << block_size;
+    fileout << GetParams().MessageStart() << block_size << nSizeAuxPow;
     // Write block
     pos.nPos += BLOCK_SERIALIZATION_HEADER_SIZE;
     fileout << TX_WITH_WITNESS(block);
