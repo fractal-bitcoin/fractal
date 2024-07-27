@@ -667,7 +667,11 @@ static bool WriteBlockToDisk(const CBlock& block, FlatFilePos& pos, const CMessa
 
     // Write index header
     unsigned int nSize = GetSerializeSize(block, fileout.GetVersion());
-    fileout << messageStart << nSize;
+    unsigned int nSizeAuxPow = 0;
+    if (block.IsAuxpow() && block.auxpow != nullptr) {
+        nSizeAuxPow = ::GetSerializeSize(*block.auxpow, fileout.GetVersion());
+    }
+    fileout << messageStart << nSize << nSizeAuxPow;
 
     // Write block
     long fileOutPos = ftell(fileout.Get());
@@ -777,7 +781,7 @@ bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, con
 bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const FlatFilePos& pos, const CMessageHeader::MessageStartChars& message_start)
 {
     FlatFilePos hpos = pos;
-    hpos.nPos -= 8; // Seek back 8 bytes for meta header
+    hpos.nPos -= 12; // Seek back 12 bytes for meta header
     CAutoFile filein(OpenBlockFile(hpos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull()) {
         return error("%s: OpenBlockFile failed for %s", __func__, pos.ToString());
@@ -786,13 +790,19 @@ bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const FlatFilePos& pos, c
     try {
         CMessageHeader::MessageStartChars blk_start;
         unsigned int blk_size;
+        unsigned int auxpow_size;
 
-        filein >> blk_start >> blk_size;
+        filein >> blk_start >> blk_size >> auxpow_size;
 
         if (memcmp(blk_start, message_start, CMessageHeader::MESSAGE_START_SIZE)) {
             return error("%s: Block magic mismatch for %s: %s versus expected %s", __func__, pos.ToString(),
                          HexStr(blk_start),
                          HexStr(message_start));
+        }
+
+        if (auxpow_size >= blk_size) {
+            return error("%s: auxpow data is larger than block size for %s: %s versus %s", __func__, pos.ToString(),
+                         auxpow_size, blk_size);
         }
 
         if (blk_size > MAX_SIZE) {
@@ -817,7 +827,7 @@ FlatFilePos BlockManager::SaveBlockToDisk(const CBlock& block, int nHeight, CCha
     if (dbp != nullptr) {
         blockPos = *dbp;
     }
-    if (!FindBlockPos(blockPos, nBlockSize + 8, nHeight, active_chain, block.GetBlockTime(), dbp != nullptr)) {
+    if (!FindBlockPos(blockPos, nBlockSize + 12, nHeight, active_chain, block.GetBlockTime(), dbp != nullptr)) {
         error("%s: FindBlockPos failed", __func__);
         return FlatFilePos();
     }
