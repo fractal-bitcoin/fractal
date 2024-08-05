@@ -3473,10 +3473,17 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
         // Don't accept any forks from the main chain prior to last checkpoint.
         // GetLastCheckpoint finds the last checkpoint in MapCheckpoints that's in our
         // BlockIndex().
-        const CBlockIndex* pcheckpoint = blockman.GetLastCheckpoint(chainman.GetParams().Checkpoints());
+
+        const CCheckpointData& checkpointdata = chainman.GetParams().Checkpoints();
+        const CBlockIndex* pcheckpoint = blockman.GetLastCheckpoint(checkpointdata);
         if (pcheckpoint && nHeight < pcheckpoint->nHeight) {
             LogPrintf("ERROR: %s: forked chain older than last checkpoint (height %d)\n", __func__, nHeight);
             return state.Invalid(BlockValidationResult::BLOCK_CHECKPOINT, "bad-fork-prior-to-checkpoint");
+        }
+
+        if (nHeight == checkpointdata.GetHeight() && block.GetHash() != checkpointdata.GetHash()) {
+            LogPrintf("ERROR: %s: forked chain on last checkpoint (height %d)\n", __func__, nHeight);
+            return state.Invalid(BlockValidationResult::BLOCK_CHECKPOINT, "bad-fork-to-checkpoint");
         }
     }
 

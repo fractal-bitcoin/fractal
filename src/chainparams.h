@@ -26,6 +26,12 @@ struct CCheckpointData {
         const auto& final_checkpoint = mapCheckpoints.rbegin();
         return final_checkpoint->first /* height */;
     }
+
+    const uint256 GetHash() const {
+        const auto& final_checkpoint = mapCheckpoints.rbegin();
+        return final_checkpoint->second /* hash */;
+    }
+
 };
 
 struct AssumeutxoHash : public BaseHash<uint256> {
