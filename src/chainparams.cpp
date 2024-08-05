@@ -133,7 +133,7 @@ public:
 
         vFixedSeeds.clear();
 
-        fMiningRequiresPeers = false;
+        fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         m_is_test_chain = false;
@@ -236,7 +236,7 @@ public:
 
         bech32_hrp = "tb";
 
-        fMiningRequiresPeers = false;
+        fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         m_is_test_chain = true;
