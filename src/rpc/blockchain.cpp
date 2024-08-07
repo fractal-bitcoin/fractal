@@ -562,6 +562,7 @@ static RPCHelpMan getblockheader()
                 {
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The block hash"},
                     {"verbose", RPCArg::Type::BOOL, RPCArg::Default{true}, "true for a json object, false for the hex-encoded data"},
+                    {"auxpow", RPCArg::Type::BOOL, RPCArg::Default{false}, "true for auxpow data in the hex-encoded data"},
                 },
                 {
                     RPCResult{"for verbose = true",
@@ -598,6 +599,10 @@ static RPCHelpMan getblockheader()
     if (!request.params[1].isNull())
         fVerbose = request.params[1].get_bool();
 
+    bool fAuxPow = false;
+    if (!request.params[2].isNull())
+        fAuxPow = request.params[2].get_bool();
+
     ChainstateManager& chainman = EnsureAnyChainman(request.context);
 
     const CBlockIndex* pblockindex;
@@ -617,7 +622,12 @@ static RPCHelpMan getblockheader()
     if (!fVerbose)
     {
         CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION);
-        ssBlock << header;
+        if (fAuxPow) {
+            ssBlock << header;
+        } else {
+            const auto header = pblockindex->GetPureHeader();
+            ssBlock << header;
+        }
         std::string strHex = HexStr(ssBlock);
         return strHex;
     }
@@ -698,6 +708,7 @@ static RPCHelpMan getblock()
                 {
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The block hash"},
                     {"verbosity|verbose", RPCArg::Type::NUM, RPCArg::Default{1}, "0 for hex-encoded data, 1 for a JSON object, 2 for JSON object with transaction data, and 3 for JSON object with transaction data including prevout information for inputs"},
+                    {"auxpow", RPCArg::Type::BOOL, RPCArg::Default{false}, "true for auxpow data in the hex-encoded data"},
                 },
                 {
                     RPCResult{"for verbosity = 0",
@@ -780,6 +791,9 @@ static RPCHelpMan getblock()
             verbosity = request.params[1].getInt<int>();
         }
     }
+    bool fAuxPow = false;
+    if (!request.params[2].isNull())
+        fAuxPow = request.params[2].get_bool();
 
     CBlock block;
     const CBlockIndex* pblockindex;
@@ -800,7 +814,13 @@ static RPCHelpMan getblock()
     if (verbosity <= 0)
     {
         CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION | RPCSerializationFlags());
-        ssBlock << block;
+        if (fAuxPow) {
+            ssBlock << block;
+        } else{
+            const auto header = pblockindex->GetPureHeader();
+            ssBlock << header;
+            ssBlock << block.vtx;
+        }
         std::string strHex = HexStr(ssBlock);
         return strHex;
     }
