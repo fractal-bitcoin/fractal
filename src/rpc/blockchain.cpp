@@ -608,6 +608,7 @@ static RPCHelpMan getblockheader()
                 {
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The block hash"},
                     {"verbose", RPCArg::Type::BOOL, RPCArg::Default{true}, "true for a json object, false for the hex-encoded data"},
+                    {"auxpow", RPCArg::Type::BOOL, RPCArg::Default{false}, "true for auxpow data in the hex-encoded data"},
                 },
                 {
                     RPCResult{"for verbose = true",
@@ -646,6 +647,10 @@ static RPCHelpMan getblockheader()
     if (!request.params[1].isNull())
         fVerbose = request.params[1].get_bool();
 
+    bool fAuxPow = false;
+    if (!request.params[2].isNull())
+        fAuxPow = request.params[2].get_bool();
+
     ChainstateManager& chainman = EnsureAnyChainman(request.context);
 
     const CBlockIndex* pblockindex;
@@ -665,7 +670,12 @@ static RPCHelpMan getblockheader()
     if (!fVerbose)
     {
         DataStream ssBlock{};
-        ssBlock << header;
+        if (fAuxPow) {
+            ssBlock << header;
+        } else {
+            const auto header = pblockindex->GetPureHeader();
+            ssBlock << header;
+        }
         std::string strHex = HexStr(ssBlock);
         return strHex;
     }
@@ -711,7 +721,7 @@ static CBlock GetBlockChecked(BlockManager& blockman, const CBlockIndex& blockin
     return block;
 }
 
-static std::vector<uint8_t> GetRawBlockChecked(BlockManager& blockman, const CBlockIndex& blockindex)
+static std::vector<uint8_t> GetRawBlockChecked(BlockManager& blockman, const CBlockIndex& blockindex, bool fAuxPow)
 {
     std::vector<uint8_t> data{};
     FlatFilePos pos{};
@@ -721,7 +731,7 @@ static std::vector<uint8_t> GetRawBlockChecked(BlockManager& blockman, const CBl
         pos = blockindex.GetBlockPos();
     }
 
-    if (!blockman.ReadRawBlock(data, pos)) {
+    if (!blockman.ReadRawBlock(data, pos, fAuxPow)) {
         // Block not found on disk. This shouldn't normally happen unless the block was
         // pruned right after we released the lock above.
         throw JSONRPCError(RPC_MISC_ERROR, "Block not found on disk");
@@ -784,6 +794,7 @@ static RPCHelpMan getblock()
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The block hash"},
                     {"verbosity|verbose", RPCArg::Type::NUM, RPCArg::Default{1}, "0 for hex-encoded data, 1 for a JSON object, 2 for JSON object with transaction data, and 3 for JSON object with transaction data including prevout information for inputs",
                      RPCArgOptions{.skip_type_check = true}},
+                    {"auxpow", RPCArg::Type::BOOL, RPCArg::Default{false}, "true for auxpow data in the hex-encoded data"},
                 },
                 {
                     RPCResult{"for verbosity = 0",
@@ -849,6 +860,9 @@ static RPCHelpMan getblock()
     uint256 hash(ParseHashV(request.params[0], "blockhash"));
 
     int verbosity{ParseVerbosity(request.params[1], /*default_verbosity=*/1, /*allow_bool=*/true)};
+    bool fAuxPow = false;
+    if (!request.params[2].isNull())
+        fAuxPow = request.params[2].get_bool();
 
     const CBlockIndex* pblockindex;
     const CBlockIndex* tip;
@@ -863,7 +877,7 @@ static RPCHelpMan getblock()
         }
     }
 
-    const std::vector<uint8_t> block_data{GetRawBlockChecked(chainman.m_blockman, *pblockindex)};
+    const std::vector<uint8_t> block_data{GetRawBlockChecked(chainman.m_blockman, *pblockindex, fAuxPow)};
 
     if (verbosity <= 0) {
         return HexStr(block_data);
