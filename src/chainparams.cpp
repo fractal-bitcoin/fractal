@@ -112,7 +112,7 @@ public:
             1,            // anchor block height
             0x1c00ffff,   // anchor block nBits
             0x190fffff,   // anchor block nBits for auxpow
-            1722851126,   // anchor block previous block timestamp
+            1723536414,   // anchor block previous block timestamp
         };
 
         /**
@@ -161,7 +161,7 @@ public:
         checkpointData = {
             {
                 {0, uint256S("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
-                {1, uint256S("00000000002b884316df8e01785b966a28199d62b8ecfdae119a64fee97fdd62")},
+                {1, uint256S("000000000021b22bb6a9718e5db62fca1eb2ac6e34535e70c67b374dcb29c570")},
             }
         };
 
@@ -234,7 +234,7 @@ public:
             1,            // anchor block height
             0x1c00ffff,   // anchor block nBits
             0x1c00ffff,   // anchor block nBits for auxpow
-            1722842100,   // anchor block previous block timestamp
+            1723536414,   // anchor block previous block timestamp
         };
 
         pchMessageStart[0] = 0xfa;
