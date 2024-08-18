@@ -6,6 +6,7 @@
 #include <test/fuzz/FuzzedDataProvider.h>
 #include <test/fuzz/fuzz.h>
 #include <test/fuzz/util.h>
+#include <chainparams.h>
 
 #include <cstdint>
 #include <optional>
@@ -33,7 +34,7 @@ FUZZ_TARGET(chain)
         (void)disk_block_index->IsValid();
     }
 
-    const CBlockHeader block_header = disk_block_index->GetBlockHeader();
+    const CBlockHeader block_header = disk_block_index->GetBlockHeader(Params().GetConsensus());
     (void)CDiskBlockIndex{*disk_block_index};
     (void)disk_block_index->BuildSkip();
 
