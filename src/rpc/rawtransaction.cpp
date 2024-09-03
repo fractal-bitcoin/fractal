@@ -67,12 +67,15 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, 
         const CBlockIndex* pindex = active_chainstate.m_blockman.LookupBlockIndex(hashBlock);
         if (pindex) {
             if (active_chainstate.m_chain.Contains(pindex)) {
+                entry.pushKV("blockheight", pindex->nHeight);
                 entry.pushKV("confirmations", 1 + active_chainstate.m_chain.Height() - pindex->nHeight);
                 entry.pushKV("time", pindex->GetBlockTime());
                 entry.pushKV("blocktime", pindex->GetBlockTime());
             }
-            else
+            else {
+                entry.pushKV("blockheight", pindex->nHeight);
                 entry.pushKV("confirmations", 0);
+            }
         }
     }
 }
