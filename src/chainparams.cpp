@@ -108,7 +108,7 @@ public:
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
             1,            // anchor block height
             0x1900cfff,   // anchor block nBits
-            0x180cffff,   // anchor block nBits for auxpow
+            0x18029fff,   // anchor block nBits for auxpow
             1725840000,   // anchor block previous block timestamp
         };
 
