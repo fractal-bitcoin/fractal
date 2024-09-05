@@ -188,8 +188,7 @@ public:
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 2100000;
-        consensus.script_flag_exceptions.emplace( // BIP16 exception
-            uint256S("0x00000000dd30457c001f4095d208cc1296b0eed002427aa599874af7a432b105"), SCRIPT_VERIFY_NONE);
+
         consensus.BIP34Height = 1;
         consensus.BIP34Hash = uint256S("");
         consensus.BIP65Height = 1;
@@ -202,15 +201,15 @@ public:
         consensus.nPowTargetSpacing = 30;
         consensus.nPowTargetSpacingLegacy = 45;
         consensus.nPowTargetSpacingAuxPow = 90;
-        consensus.fPowAllowMinDifficultyBlocks = true;
+        consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
-        consensus.nRuleChangeActivationThreshold = 2160; // 75% for testchains
+        consensus.nRuleChangeActivationThreshold = 2592; // 90% for testchains
         consensus.nMinerConfirmationWindow = 2880; // nPowTargetTimespan / nPowTargetSpacing
 
         // The half life for the ASERT DAA. For every (nASERTHalfLife) seconds behind schedule the blockchain gets,
         // difficulty is cut in half. Doubled if blocks are ahead of schedule.
-        // five minutes
-        consensus.nASERTHalfLife = 5 * 60;
+        // three hours
+        consensus.nASERTHalfLife = 3 * 60 * 60;
 
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
@@ -227,51 +226,53 @@ public:
         consensus.defaultAssumeValid = uint256S("");
 
         consensus.nAuxpowChainId = 0x2024;
-        consensus.fStrictChainId = false;
+        consensus.fStrictChainId = true;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
             1,            // anchor block height
             0x1c00ffff,   // anchor block nBits
-            0x1c00ffff,   // anchor block nBits for auxpow
+            0x190fffff,   // anchor block nBits for auxpow
             1723536414,   // anchor block previous block timestamp
         };
 
-        pchMessageStart[0] = 0xfa;
-        pchMessageStart[1] = 0x00;
-        pchMessageStart[2] = 0xf8;
-        pchMessageStart[3] = 0xf6;
+        pchMessageStart[0] = 0xe8;
+        pchMessageStart[1] = 0xad;
+        pchMessageStart[2] = 0xa3;
+        pchMessageStart[3] = 0xc8;
         nDefaultPort = 18333;
-        nPruneAfterHeight = 1000;
-        m_assumed_blockchain_size = 42;
-        m_assumed_chain_state_size = 2;
+        nPruneAfterHeight = 100000;
+        m_assumed_blockchain_size = 496;
+        m_assumed_chain_state_size = 6;
 
-        genesis = CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
+        vSeeds.emplace_back("dnsseed.fractalbitcoin.io.");
         // nodes with support for servicebits filtering should be at the top
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,128);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
 
-        bech32_hrp = "tb";
+        bech32_hrp = "bc";
 
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
-        m_is_test_chain = true;
+        m_is_test_chain = false;
         m_is_mockable_chain = false;
 
         checkpointData = {
             {
-                {0, uint256S("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")},
+                {0, uint256S("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
+                {1, uint256S("000000000021b22bb6a9718e5db62fca1eb2ac6e34535e70c67b374dcb29c570")},
             }
         };
 
