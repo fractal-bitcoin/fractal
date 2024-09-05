@@ -262,7 +262,7 @@ public:
 
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
-        fRequireStandard = false;
+        fRequireStandard = true;
         m_is_test_chain = false;
         m_is_mockable_chain = false;
 
