@@ -201,6 +201,14 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         pindexPrev = pindexPrev->pprev;
     }
 
+    if (pindexPrev->nHeight <= params.asertAnchorParams.nHeight) {
+        if (pblock->IsAuxpow()) {
+            return params.asertAnchorParams.nBitsAuxPow;
+        } else {
+            return params.asertAnchorParams.nBitsLegacy;
+        }
+    }
+
     return GetNextASERTWorkRequired(pindexPrev, pblock, params);
 }
 
