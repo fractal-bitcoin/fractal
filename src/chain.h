@@ -233,6 +233,11 @@ public:
         return ret;
     }
 
+    bool IsAuxpow() const
+    {
+        return nVersion & CPureBlockHeader::VERSION_AUXPOW;
+    }
+
     CPureBlockHeader GetPureHeader() const
     {
         CPureBlockHeader block;
