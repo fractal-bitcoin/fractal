@@ -193,6 +193,9 @@ public:
     //! @sa ActivateSnapshot
     unsigned int nChainTx{0};
 
+    //! (memory only) Number of auxpow blocks in the chain up to and including this block.
+    unsigned int nAuxPow{0};
+
     //! Verification status of this block. See enum BlockStatus
     //!
     //! Note: this value is modified to show BLOCK_OPT_WITNESS during UTXO snapshot

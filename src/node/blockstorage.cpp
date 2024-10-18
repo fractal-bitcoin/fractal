@@ -105,6 +105,15 @@ CBlockIndex* BlockManager::AddToBlockIndex(const CBlockHeader& block, CBlockInde
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
         pindexNew->BuildSkip();
     }
+
+    pindexNew->nAuxPow = 0;
+    if (pindexNew->pprev) {
+        pindexNew->nAuxPow = pindexNew->pprev->nAuxPow;
+    }
+    if (block.IsAuxpow()) {
+        pindexNew->nAuxPow++;
+    }
+
     pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
     pindexNew->RaiseValidity(BLOCK_VALID_TREE);
@@ -267,6 +276,15 @@ bool BlockManager::LoadBlockIndex(const Consensus::Params& consensus_params)
 
     for (CBlockIndex* pindex : vSortedByHeight) {
         if (ShutdownRequested()) return false;
+
+        pindex->nAuxPow = 0;
+        if (pindex->pprev) {
+            pindex->nAuxPow = pindex->pprev->nAuxPow;
+        }
+        if (pindex->IsAuxpow()) {
+            pindex->nAuxPow++;
+        }
+
         pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + GetBlockProof(*pindex);
         pindex->nTimeMax = (pindex->pprev ? std::max(pindex->pprev->nTimeMax, pindex->nTime) : pindex->nTime);
 

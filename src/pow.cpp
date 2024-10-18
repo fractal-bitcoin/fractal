@@ -51,17 +51,11 @@ static uint32_t GetNextASERTWorkRequired(const CBlockIndex *pindexPrev,
     // Time difference is from anchor block's timestamp
     const int64_t nTimeDiff = pindexPrev->GetBlockTime() - anchorParams.nBlockTime;
     // Height difference is from current block to anchor block
-    int nHeightDiff = pindexPrev->nHeight - anchorParams.nHeight;
 
-    int64_t nTimeStart = GetTimeMicros();
-    while (pindexPrev != nullptr && pindexPrev->nHeight > anchorParams.nHeight) {
-        if (pindexPrev->GetPureHeader().IsAuxpow() != pblock->IsAuxpow()) {
-            nHeightDiff--;
-        }
-        pindexPrev = pindexPrev->pprev;
+    int nHeightDiff = pindexPrev->nHeight - anchorParams.nHeight - pindexPrev->nAuxPow;
+    if (pblock->IsAuxpow()) {
+        nHeightDiff = pindexPrev->nAuxPow;
     }
-    int64_t nTime = GetTimeMicros();
-    LogPrint(BCLog::BENCH, "GetNextASERTWorkRequired() height diff: %.2fms\n", 0.001 * (nTime - nTimeStart));
 
     // Do the actual target adaptation calculation in separate
     // CalculateASERT() function
