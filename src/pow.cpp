@@ -190,7 +190,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Slow path: walk back until we find the first same version block
     const CBlockIndex *pindexPrev = pindexLast;
 
-    while (pindexPrev->GetPureHeader().IsAuxpow() != pblock->IsAuxpow()) {
+    while (pindexPrev->IsAuxpow() != pblock->IsAuxpow()) {
         if (pindexPrev->nHeight <= params.asertAnchorParams.nHeight) {
             if (pblock->IsAuxpow()) {
                 return params.asertAnchorParams.nBitsAuxPow;
