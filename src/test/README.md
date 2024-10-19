@@ -1,4 +1,4 @@
-# Unit tests
+# Unit Tests
 
 The sources in this directory are unit test cases. Boost includes a
 unit testing framework, and since Bitcoin Core already uses Boost, it makes
@@ -10,7 +10,7 @@ The build system is set up to compile an executable called `test_bitcoin`
 that runs all of the unit tests. The main source file for the test library is found in
 `util/setup_common.cpp`.
 
-### Compiling/running unit tests
+## Compiling/Running Unit Tests
 
 Unit tests will be automatically compiled if dependencies were met in `./configure`
 and tests weren't explicitly disabled.
@@ -26,12 +26,12 @@ To add more unit tests, add `BOOST_AUTO_TEST_CASE` functions to the existing
 .cpp files in the `test/` directory or add new .cpp files that
 implement new `BOOST_AUTO_TEST_SUITE` sections.
 
-To run the GUI unit tests manually, launch `src/qt/test/test_bitcoin-qt`
+To run the GUI unit tests manually, launch `src/qt/test/test_bitcoin-qt`.
 
 To add more GUI unit tests, add them to the `src/qt/test/` directory and
 the `src/qt/test/test_main.cpp` file.
 
-### Running individual tests
+## Running Individual Tests
 
 `test_bitcoin` accepts the command line arguments from the boost framework.
 For example, to run just the `getarg_tests` suite of tests:
@@ -61,7 +61,7 @@ test_bitcoin --run_test=getarg_tests/doubledash
 
 Run `test_bitcoin --help` for the full list.
 
-### Adding test cases
+## Adding Test Cases
 
 To add a new unit test file to our test suite you need
 to add the file to `src/Makefile.test.include`. The pattern is to create
@@ -71,7 +71,7 @@ and such files should wrap their tests in a test suite
 called `<source_filename>_tests`. For an example of this pattern,
 see `uint256_tests.cpp`.
 
-### Logging and debugging in unit tests
+## Logging and Debugging in Unit Tests
 
 `make check` will write to a log file `foo_tests.cpp.log` and display this file
 on failure. For running individual tests verbosely, refer to the section
@@ -87,7 +87,7 @@ start debugging, just like you would with any other program:
 gdb src/test/test_bitcoin
 ```
 
-#### Segmentation faults
+### Segmentation Faults
 
 If you hit a segmentation fault during a test run, you can diagnose where the fault
 is happening by running `gdb ./src/test/test_bitcoin` and then using the `bt` command
@@ -106,9 +106,10 @@ Running the tests and hitting a segmentation fault should now produce a file cal
 (on Linux platforms, the file name will likely depend on the contents of
 `/proc/sys/kernel/core_pattern`).
 
-You can then explore the core dump using
+You can then explore the core dump using:
+
 ```bash
 gdb src/test/test_bitcoin core
 
-(gbd) bt  # produce a backtrace for where a segfault occurred
+(gdb) bt # produce a backtrace for where a segfault occurred
 ```
