@@ -96,6 +96,8 @@ public:
     std::vector<int> GetAvailableSnapshotHeights() const;
 
     const CBlock& GenesisBlock() const { return genesis; }
+    /** Make miner wait to have peers to avoid wasting work */
+    bool MiningRequiresPeers() const { return fMiningRequiresPeers; }
     /** Default value for -checkmempool and -checkblockindex argument */
     bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
     /** If this chain is exclusively used for testing */
@@ -179,6 +181,7 @@ protected:
     ChainType m_chain_type;
     CBlock genesis;
     std::vector<uint8_t> vFixedSeeds;
+    bool fMiningRequiresPeers;
     bool fDefaultConsistencyChecks;
     bool m_is_mockable_chain;
     CCheckpointData checkpointData;

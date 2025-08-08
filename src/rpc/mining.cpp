@@ -763,7 +763,7 @@ static RPCHelpMan getblocktemplate()
 
     if (!miner.isTestChain()) {
         const CConnman& connman = EnsureConnman(node);
-        if (connman.GetNodeCount(ConnectionDirection::Both) == 0) {
+        if (connman.GetNodeCount(ConnectionDirection::Both) == 0 && chainman.GetParams().MiningRequiresPeers()) {
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, CLIENT_NAME " is not connected!");
         }
 
