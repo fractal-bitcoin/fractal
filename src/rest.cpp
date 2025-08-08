@@ -246,7 +246,7 @@ static bool rest_headers(const std::any& context,
     case RESTResponseFormat::BINARY: {
         DataStream ssHeader{};
         for (const CBlockIndex *pindex : headers) {
-            ssHeader << pindex->GetBlockHeader();
+            ssHeader << pindex->GetBlockHeader(chainman.m_blockman);
         }
 
         req->WriteHeader("Content-Type", "application/octet-stream");
@@ -257,7 +257,7 @@ static bool rest_headers(const std::any& context,
     case RESTResponseFormat::HEX: {
         DataStream ssHeader{};
         for (const CBlockIndex *pindex : headers) {
-            ssHeader << pindex->GetBlockHeader();
+            ssHeader << pindex->GetBlockHeader(chainman.m_blockman);
         }
 
         std::string strHex = HexStr(ssHeader) + "\n";

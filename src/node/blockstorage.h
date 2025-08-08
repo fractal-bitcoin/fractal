@@ -417,8 +417,13 @@ public:
     bool ReadBlock(CBlock& block, const FlatFilePos& pos) const;
     bool ReadBlock(CBlock& block, const CBlockIndex& index) const;
     bool ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos) const;
-
+    bool ReadBlockHeader(CBlockHeader& blockheader, const CBlockIndex& index) const;
     bool ReadBlockUndo(CBlockUndo& blockundo, const CBlockIndex& index) const;
+
+    template<typename T>
+    bool ReadBlockOrHeader(T& block, const FlatFilePos& pos) const;
+    template<typename T>
+    bool ReadBlockOrHeader(T& block, const CBlockIndex& index) const;
 
     void CleanupBlockRevFiles() const;
 };

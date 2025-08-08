@@ -120,6 +120,10 @@ public:
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
 
+        consensus.nAuxpowChainId = 0x0003;
+        consensus.nAuxpowStartHeight = 3;
+        consensus.fStrictChainId = true;
+
         /**
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -233,6 +237,10 @@ public:
 
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
+
+        consensus.nAuxpowStartHeight = 3;
+        consensus.nAuxpowChainId = 0x0003;
+        consensus.fStrictChainId = false;
 
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
@@ -540,6 +548,10 @@ public:
 
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
+
+        consensus.nAuxpowStartHeight = 3;
+        consensus.nAuxpowChainId = 0x0003;
+        consensus.fStrictChainId = true;
 
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0xbf;

@@ -132,10 +132,15 @@ bool BlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, s
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
 
-                if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams)) {
-                    LogError("%s: CheckProofOfWork failed: %s\n", __func__, pindexNew->ToString());
-                    return false;
-                }
+                /* Bitcoin checks the PoW here.  We don't do this because
+                   the CDiskBlockIndex does not contain the auxpow.
+                   This check isn't important, since the data on disk should
+                   already be valid and can be trusted.  */
+
+                // if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams)) {
+                //     LogError("%s: CheckProofOfWork failed: %s\n", __func__, pindexNew->ToString());
+                //     return false;
+                // }
 
                 pcursor->Next();
             } else {
@@ -996,7 +1001,8 @@ bool BlockManager::WriteBlockUndo(const CBlockUndo& blockundo, BlockValidationSt
     return true;
 }
 
-bool BlockManager::ReadBlock(CBlock& block, const FlatFilePos& pos) const
+template<typename T>
+bool BlockManager::ReadBlockOrHeader(T& block, const FlatFilePos& pos) const
 {
     block.SetNull();
 
@@ -1016,7 +1022,7 @@ bool BlockManager::ReadBlock(CBlock& block, const FlatFilePos& pos) const
     }
 
     // Check the header
-    if (!CheckProofOfWork(block.GetHash(), block.nBits, GetConsensus())) {
+    if (!CheckProofOfWork(block, GetConsensus())) {
         LogError("%s: Errors in block header at %s\n", __func__, pos.ToString());
         return false;
     }
@@ -1030,11 +1036,12 @@ bool BlockManager::ReadBlock(CBlock& block, const FlatFilePos& pos) const
     return true;
 }
 
-bool BlockManager::ReadBlock(CBlock& block, const CBlockIndex& index) const
+template<typename T>
+bool BlockManager::ReadBlockOrHeader(T& block, const CBlockIndex& index) const
 {
     const FlatFilePos block_pos{WITH_LOCK(cs_main, return index.GetBlockPos())};
 
-    if (!ReadBlock(block, block_pos)) {
+    if (!ReadBlockOrHeader(block, block_pos)) {
         return false;
     }
     if (block.GetHash() != index.GetBlockHash()) {
@@ -1042,6 +1049,19 @@ bool BlockManager::ReadBlock(CBlock& block, const CBlockIndex& index) const
         return false;
     }
     return true;
+}
+
+bool BlockManager::ReadBlock(CBlock& block, const FlatFilePos& pos) const
+{
+    return ReadBlockOrHeader(block, pos);
+}
+bool BlockManager::ReadBlock(CBlock& block, const CBlockIndex& index) const
+{
+    return ReadBlockOrHeader(block, index);
+}
+bool BlockManager::ReadBlockHeader(CBlockHeader& blockheader, const CBlockIndex& index) const
+{
+    return ReadBlockOrHeader(blockheader, index);
 }
 
 bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos) const

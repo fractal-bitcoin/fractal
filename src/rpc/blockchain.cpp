@@ -593,7 +593,7 @@ static RPCHelpMan getblockheader()
     if (!fVerbose)
     {
         DataStream ssBlock{};
-        ssBlock << pblockindex->GetBlockHeader();
+        ssBlock << pblockindex->GetBlockHeader(chainman.m_blockman);
         std::string strHex = HexStr(ssBlock);
         return strHex;
     }
