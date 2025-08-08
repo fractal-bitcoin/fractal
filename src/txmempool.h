@@ -327,7 +327,7 @@ protected:
 
 public:
 
-    static const int ROLLING_FEE_HALFLIFE = 60 * 60 * 12; // public only for testing
+    static const int ROLLING_FEE_HALFLIFE = 60 * 36; // public only for testing
 
     struct CTxMemPoolEntry_Indices final : boost::multi_index::indexed_by<
             // sorted by txid
