@@ -87,10 +87,7 @@ public:
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 2100000;
-        consensus.script_flag_exceptions.emplace( // BIP16 exception
-            uint256{"00000000000002dc756eebf4f49723ed8d30cc28a5f108eb94b1ba88ac4f9c22"}, SCRIPT_VERIFY_NONE);
-        consensus.script_flag_exceptions.emplace( // Taproot exception
-            uint256{"0000000000000000000f14c35b2d841e986ab5441de8c585d5ffe55ea1e395ad"}, SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_WITNESS);
+
         consensus.BIP34Height = 1;
         consensus.BIP34Hash = uint256{};
         consensus.BIP65Height = 1;
@@ -134,9 +131,9 @@ public:
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
             1,            // anchor block height
-            0x1d00ffff,   // anchor block nBits
-            0x1d00ffff,   // anchor block nBits for auxpow
-            1721369687,   // anchor block previous block timestamp
+            0x1900cfff,   // anchor block nBits
+            0x18029fff,   // anchor block nBits for auxpow
+            1725840000,   // anchor block previous block timestamp
         };
 
         /**
@@ -144,10 +141,10 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0xf9;
-        pchMessageStart[1] = 0xbe;
-        pchMessageStart[2] = 0xb4;
-        pchMessageStart[3] = 0xd9;
+        pchMessageStart[0] = 0xd9;
+        pchMessageStart[1] = 0x9e;
+        pchMessageStart[2] = 0x94;
+        pchMessageStart[3] = 0xb9;
         nDefaultPort = 8333;
         nPruneAfterHeight = 100000;
         m_assumed_blockchain_size = 720;
@@ -184,7 +181,7 @@ public:
         checkpointData = {
             {
                 {0, uint256{"000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"}},
-                {1, uint256{"000000008fbbbe27a3e408afd8178e22de95253b52f7fc4372cb6e3cd5aa0ebc"}},
+                {1, uint256{"00000000000000005a5c13fe33f6717c7ad81fc8837ae75e4693c16acbdd0f66"}},
             }
         };
 
