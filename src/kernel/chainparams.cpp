@@ -594,10 +594,10 @@ public:
         // RegTest has no hard-coded anchor block
         // consensus.asertAnchorParams.reset();
 
-        pchMessageStart[0] = 0xfa;
-        pchMessageStart[1] = 0xbf;
-        pchMessageStart[2] = 0xb5;
-        pchMessageStart[3] = 0xda;
+        pchMessageStart[0] = 0xe9;
+        pchMessageStart[1] = 0xae;
+        pchMessageStart[2] = 0xa4;
+        pchMessageStart[3] = 0xc9;
         nDefaultPort = 18444;
         nPruneAfterHeight = opts.fastprune ? 100 : 1000;
         m_assumed_blockchain_size = 0;
