@@ -1064,7 +1064,7 @@ bool BlockManager::ReadBlockHeader(CBlockHeader& blockheader, const CBlockIndex&
     return ReadBlockOrHeader(blockheader, index);
 }
 
-bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos) const
+bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos, bool fSkipAuxPow) const
 {
     FlatFilePos hpos = pos;
     // If nPos is less than BLOCK_SERIALIZATION_HEADER_SIZE(12) the pos is null and we don't have the block data
@@ -1108,6 +1108,11 @@ bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& 
 
         block.resize(blk_size); // Zeroing of memory is intentional here
         filein.read(MakeWritableByteSpan(block));
+        if (fSkipAuxPow && auxpow_size > 0) {
+            const size_t BLOCK_HEADER_SIZE = 80;
+            block.erase(block.begin() + BLOCK_HEADER_SIZE,
+                        block.begin() + BLOCK_HEADER_SIZE + auxpow_size);
+        }
     } catch (const std::exception& e) {
         LogError("%s: Read from block file failed: %s for %s\n", __func__, e.what(), pos.ToString());
         return false;

@@ -320,7 +320,7 @@ static bool rest_block(const std::any& context,
     }
 
     std::vector<uint8_t> block_data{};
-    if (!chainman.m_blockman.ReadRawBlock(block_data, pos)) {
+    if (!chainman.m_blockman.ReadRawBlock(block_data, pos, true)) {
         return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not found");
     }
 
