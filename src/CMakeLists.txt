@@ -208,6 +208,7 @@ if(ENABLE_WALLET)
       core_interface
       bitcoin_wallet
       bitcoin_common
+      bitcoin_node
       bitcoin_util
       Boost::headers
     )
