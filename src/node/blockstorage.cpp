@@ -984,7 +984,7 @@ bool BlockManager::WriteBlockUndo(const CBlockUndo& blockundo, BlockValidationSt
         // Write index header
         fileout << GetParams().MessageStart() << blockundo_size;
         // Write undo data
-        pos.nPos += BLOCK_SERIALIZATION_HEADER_SIZE;
+        pos.nPos += BLOCK_UNDO_SERIALIZATION_HEADER_SIZE;
         fileout << blockundo;
 
         // Calculate & write checksum

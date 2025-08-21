@@ -75,10 +75,13 @@ static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
 static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 
 /** Size of header written by WriteBlock before a serialized CBlock (12 bytes) */
-static constexpr size_t BLOCK_SERIALIZATION_HEADER_SIZE{std::tuple_size_v<MessageStartChars> + sizeof(unsigned int)+ sizeof(unsigned int)};
+static constexpr size_t BLOCK_SERIALIZATION_HEADER_SIZE{std::tuple_size_v<MessageStartChars> + sizeof(unsigned int) + sizeof(unsigned int)};
 
-/** Total overhead when writing undo data: header (12 bytes) plus checksum (32 bytes) */
-static constexpr size_t UNDO_DATA_DISK_OVERHEAD{BLOCK_SERIALIZATION_HEADER_SIZE + uint256::size()};
+/** Size of header written by WriteBlockUndo before a serialized CBlockUndo (8 bytes) */
+static constexpr size_t BLOCK_UNDO_SERIALIZATION_HEADER_SIZE{std::tuple_size_v<MessageStartChars> + sizeof(unsigned int)};
+
+/** Total overhead when writing undo data: header (8 bytes) plus checksum (32 bytes) */
+static constexpr size_t UNDO_DATA_DISK_OVERHEAD{BLOCK_UNDO_SERIALIZATION_HEADER_SIZE + uint256::size()};
 
 // Because validation code takes pointers to the map's CBlockIndex objects, if
 // we ever switch to another associative container, we need to either use a
