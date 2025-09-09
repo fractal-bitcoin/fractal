@@ -106,6 +106,7 @@ add_library(bitcoin_consensus STATIC EXCLUDE_FROM_ALL
   consensus/tx_check.cpp
   hash.cpp
   primitives/block.cpp
+  primitives/pureheader.cpp
   primitives/transaction.cpp
   pubkey.cpp
   script/interpreter.cpp
@@ -128,6 +129,7 @@ endif()
 # Similar to `bitcoin_util` library, but higher-level.
 add_library(bitcoin_common STATIC EXCLUDE_FROM_ALL
   addresstype.cpp
+  auxpow.cpp
   base58.cpp
   bech32.cpp
   chain.cpp
@@ -206,6 +208,7 @@ if(ENABLE_WALLET)
       core_interface
       bitcoin_wallet
       bitcoin_common
+      bitcoin_node
       bitcoin_util
       Boost::headers
     )
@@ -284,6 +287,7 @@ add_library(bitcoin_node STATIC EXCLUDE_FROM_ALL
   policy/settings.cpp
   policy/truc_policy.cpp
   rest.cpp
+  rpc/auxpow_miner.cpp
   rpc/blockchain.cpp
   rpc/external_signer.cpp
   rpc/fees.cpp

@@ -172,6 +172,9 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock()
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
     UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+    if (m_options.set_auxpow) {
+        CAuxPow::initAuxPow(*pblock);
+    }
     pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
     pblock->nNonce         = 0;
     pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);

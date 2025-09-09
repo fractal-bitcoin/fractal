@@ -228,6 +228,7 @@ static bool rest_headers(const std::any& context,
     ChainstateManager* maybe_chainman = GetChainman(context, req);
     if (!maybe_chainman) return false;
     ChainstateManager& chainman = *maybe_chainman;
+    const node::BlockManager& blockman = chainman.m_blockman;
     {
         LOCK(cs_main);
         CChain& active_chain = chainman.ActiveChain();
@@ -246,7 +247,7 @@ static bool rest_headers(const std::any& context,
     case RESTResponseFormat::BINARY: {
         DataStream ssHeader{};
         for (const CBlockIndex *pindex : headers) {
-            ssHeader << pindex->GetBlockHeader();
+            ssHeader << pindex->GetBlockHeader(blockman);
         }
 
         req->WriteHeader("Content-Type", "application/octet-stream");
@@ -257,7 +258,7 @@ static bool rest_headers(const std::any& context,
     case RESTResponseFormat::HEX: {
         DataStream ssHeader{};
         for (const CBlockIndex *pindex : headers) {
-            ssHeader << pindex->GetBlockHeader();
+            ssHeader << pindex->GetBlockHeader(blockman);
         }
 
         std::string strHex = HexStr(ssHeader) + "\n";
@@ -268,7 +269,7 @@ static bool rest_headers(const std::any& context,
     case RESTResponseFormat::JSON: {
         UniValue jsonHeaders(UniValue::VARR);
         for (const CBlockIndex *pindex : headers) {
-            jsonHeaders.push_back(blockheaderToJSON(*tip, *pindex, chainman.GetConsensus().powLimit));
+            jsonHeaders.push_back(blockheaderToJSON(blockman, *tip, *pindex, chainman.GetConsensus().powLimit));
         }
         std::string strJSON = jsonHeaders.write() + "\n";
         req->WriteHeader("Content-Type", "application/json");
@@ -319,7 +320,7 @@ static bool rest_block(const std::any& context,
     }
 
     std::vector<uint8_t> block_data{};
-    if (!chainman.m_blockman.ReadRawBlock(block_data, pos)) {
+    if (!chainman.m_blockman.ReadRawBlock(block_data, pos, true)) {
         return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not found");
     }
 

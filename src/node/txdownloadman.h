@@ -22,12 +22,12 @@ class TxDownloadManagerImpl;
 
 /** Maximum number of in-flight transaction requests from a peer. It is not a hard limit, but the threshold at which
  *  point the OVERLOADED_PEER_TX_DELAY kicks in. */
-static constexpr int32_t MAX_PEER_TX_REQUEST_IN_FLIGHT = 100;
+static constexpr int32_t MAX_PEER_TX_REQUEST_IN_FLIGHT = 500;
 /** Maximum number of transactions to consider for requesting, per peer. It provides a reasonable DoS limit to
  *  per-peer memory usage spent on announcements, while covering peers continuously sending INVs at the maximum
  *  rate (by our own policy, see INVENTORY_BROADCAST_PER_SECOND) for several minutes, while not receiving
  *  the actual transaction (from any peer) in response to requests for them. */
-static constexpr int32_t MAX_PEER_TX_ANNOUNCEMENTS = 5000;
+static constexpr int32_t MAX_PEER_TX_ANNOUNCEMENTS = 70000;
 /** How long to delay requesting transactions via txids, if we have wtxid-relaying peers */
 static constexpr auto TXID_RELAY_DELAY{2s};
 /** How long to delay requesting transactions from non-preferred peers */

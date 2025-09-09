@@ -132,10 +132,15 @@ bool BlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, s
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
 
-                if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams)) {
-                    LogError("%s: CheckProofOfWork failed: %s\n", __func__, pindexNew->ToString());
-                    return false;
-                }
+                /* Bitcoin checks the PoW here.  We don't do this because
+                   the CDiskBlockIndex does not contain the auxpow.
+                   This check isn't important, since the data on disk should
+                   already be valid and can be trusted.  */
+
+                // if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams)) {
+                //     LogError("%s: CheckProofOfWork failed: %s\n", __func__, pindexNew->ToString());
+                //     return false;
+                // }
 
                 pcursor->Next();
             } else {
@@ -224,6 +229,15 @@ CBlockIndex* BlockManager::AddToBlockIndex(const CBlockHeader& block, CBlockInde
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
         pindexNew->BuildSkip();
     }
+
+    pindexNew->nAuxPow = 0;
+    if (pindexNew->pprev) {
+        pindexNew->nAuxPow = pindexNew->pprev->nAuxPow;
+    }
+    if (block.IsAuxpow()) {
+        pindexNew->nAuxPow++;
+    }
+
     pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
     pindexNew->RaiseValidity(BLOCK_VALID_TREE);
@@ -439,6 +453,15 @@ bool BlockManager::LoadBlockIndex(const std::optional<uint256>& snapshot_blockha
             return false;
         }
         previous_index = pindex;
+
+        pindex->nAuxPow = 0;
+        if (pindex->pprev) {
+            pindex->nAuxPow = pindex->pprev->nAuxPow;
+        }
+        if (pindex->IsAuxpow()) {
+            pindex->nAuxPow++;
+        }
+
         pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + GetBlockProof(*pindex);
         pindex->nTimeMax = (pindex->pprev ? std::max(pindex->pprev->nTimeMax, pindex->nTime) : pindex->nTime);
 
@@ -961,7 +984,7 @@ bool BlockManager::WriteBlockUndo(const CBlockUndo& blockundo, BlockValidationSt
         // Write index header
         fileout << GetParams().MessageStart() << blockundo_size;
         // Write undo data
-        pos.nPos += BLOCK_SERIALIZATION_HEADER_SIZE;
+        pos.nPos += BLOCK_UNDO_SERIALIZATION_HEADER_SIZE;
         fileout << blockundo;
 
         // Calculate & write checksum
@@ -996,7 +1019,8 @@ bool BlockManager::WriteBlockUndo(const CBlockUndo& blockundo, BlockValidationSt
     return true;
 }
 
-bool BlockManager::ReadBlock(CBlock& block, const FlatFilePos& pos) const
+template<typename T>
+bool BlockManager::ReadBlockOrHeader(T& block, const FlatFilePos& pos) const
 {
     block.SetNull();
 
@@ -1016,7 +1040,7 @@ bool BlockManager::ReadBlock(CBlock& block, const FlatFilePos& pos) const
     }
 
     // Check the header
-    if (!CheckProofOfWork(block.GetHash(), block.nBits, GetConsensus())) {
+    if (!CheckProofOfWork(block, GetConsensus())) {
         LogError("%s: Errors in block header at %s\n", __func__, pos.ToString());
         return false;
     }
@@ -1030,11 +1054,12 @@ bool BlockManager::ReadBlock(CBlock& block, const FlatFilePos& pos) const
     return true;
 }
 
-bool BlockManager::ReadBlock(CBlock& block, const CBlockIndex& index) const
+template<typename T>
+bool BlockManager::ReadBlockOrHeader(T& block, const CBlockIndex& index) const
 {
     const FlatFilePos block_pos{WITH_LOCK(cs_main, return index.GetBlockPos())};
 
-    if (!ReadBlock(block, block_pos)) {
+    if (!ReadBlockOrHeader(block, block_pos)) {
         return false;
     }
     if (block.GetHash() != index.GetBlockHash()) {
@@ -1044,16 +1069,29 @@ bool BlockManager::ReadBlock(CBlock& block, const CBlockIndex& index) const
     return true;
 }
 
-bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos) const
+bool BlockManager::ReadBlock(CBlock& block, const FlatFilePos& pos) const
+{
+    return ReadBlockOrHeader(block, pos);
+}
+bool BlockManager::ReadBlock(CBlock& block, const CBlockIndex& index) const
+{
+    return ReadBlockOrHeader(block, index);
+}
+bool BlockManager::ReadBlockHeader(CBlockHeader& blockheader, const CBlockIndex& index) const
+{
+    return ReadBlockOrHeader(blockheader, index);
+}
+
+bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos, bool fSkipAuxPow) const
 {
     FlatFilePos hpos = pos;
-    // If nPos is less than 8 the pos is null and we don't have the block data
+    // If nPos is less than BLOCK_SERIALIZATION_HEADER_SIZE(12) the pos is null and we don't have the block data
     // Return early to prevent undefined behavior of unsigned int underflow
-    if (hpos.nPos < 8) {
+    if (hpos.nPos < BLOCK_SERIALIZATION_HEADER_SIZE) {
         LogError("%s: OpenBlockFile failed for %s\n", __func__, pos.ToString());
         return false;
     }
-    hpos.nPos -= 8; // Seek back 8 bytes for meta header
+    hpos.nPos -= BLOCK_SERIALIZATION_HEADER_SIZE; // Seek back 12 bytes for meta header
     AutoFile filein{OpenBlockFile(hpos, true)};
     if (filein.IsNull()) {
         LogError("%s: OpenBlockFile failed for %s\n", __func__, pos.ToString());
@@ -1063,13 +1101,20 @@ bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& 
     try {
         MessageStartChars blk_start;
         unsigned int blk_size;
+        unsigned int auxpow_size;
 
-        filein >> blk_start >> blk_size;
+        filein >> blk_start >> blk_size >> auxpow_size;
 
         if (blk_start != GetParams().MessageStart()) {
             LogError("%s: Block magic mismatch for %s: %s versus expected %s\n", __func__, pos.ToString(),
                          HexStr(blk_start),
                          HexStr(GetParams().MessageStart()));
+            return false;
+        }
+
+        if (auxpow_size >= blk_size) {
+            LogError("%s: auxpow data is larger than block size for %s: %s versus %s", __func__, pos.ToString(),
+                         auxpow_size, blk_size);
             return false;
         }
 
@@ -1081,6 +1126,11 @@ bool BlockManager::ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& 
 
         block.resize(blk_size); // Zeroing of memory is intentional here
         filein.read(MakeWritableByteSpan(block));
+        if (fSkipAuxPow && auxpow_size > 0) {
+            const size_t BLOCK_HEADER_SIZE = 80;
+            block.erase(block.begin() + BLOCK_HEADER_SIZE,
+                        block.begin() + BLOCK_HEADER_SIZE + auxpow_size);
+        }
     } catch (const std::exception& e) {
         LogError("%s: Read from block file failed: %s for %s\n", __func__, e.what(), pos.ToString());
         return false;
@@ -1104,8 +1154,13 @@ FlatFilePos BlockManager::WriteBlock(const CBlock& block, int nHeight)
         return FlatFilePos();
     }
 
+    unsigned int nSizeAuxPow = 0;
+    if (block.IsAuxpow() && block.auxpow != nullptr) {
+        nSizeAuxPow = GetSerializeSize(*block.auxpow);
+    }
+
     // Write index header
-    fileout << GetParams().MessageStart() << block_size;
+    fileout << GetParams().MessageStart() << block_size << nSizeAuxPow;
     // Write block
     pos.nPos += BLOCK_SERIALIZATION_HEADER_SIZE;
     fileout << TX_WITH_WITNESS(block);

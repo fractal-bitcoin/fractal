@@ -74,11 +74,14 @@ static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
 /** The maximum size of a blk?????.dat file (since 0.8) */
 static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 
-/** Size of header written by WriteBlock before a serialized CBlock (8 bytes) */
-static constexpr size_t BLOCK_SERIALIZATION_HEADER_SIZE{std::tuple_size_v<MessageStartChars> + sizeof(unsigned int)};
+/** Size of header written by WriteBlock before a serialized CBlock (12 bytes) */
+static constexpr size_t BLOCK_SERIALIZATION_HEADER_SIZE{std::tuple_size_v<MessageStartChars> + sizeof(unsigned int) + sizeof(unsigned int)};
+
+/** Size of header written by WriteBlockUndo before a serialized CBlockUndo (8 bytes) */
+static constexpr size_t BLOCK_UNDO_SERIALIZATION_HEADER_SIZE{std::tuple_size_v<MessageStartChars> + sizeof(unsigned int)};
 
 /** Total overhead when writing undo data: header (8 bytes) plus checksum (32 bytes) */
-static constexpr size_t UNDO_DATA_DISK_OVERHEAD{BLOCK_SERIALIZATION_HEADER_SIZE + uint256::size()};
+static constexpr size_t UNDO_DATA_DISK_OVERHEAD{BLOCK_UNDO_SERIALIZATION_HEADER_SIZE + uint256::size()};
 
 // Because validation code takes pointers to the map's CBlockIndex objects, if
 // we ever switch to another associative container, we need to either use a
@@ -416,9 +419,14 @@ public:
     /** Functions for disk access for blocks */
     bool ReadBlock(CBlock& block, const FlatFilePos& pos) const;
     bool ReadBlock(CBlock& block, const CBlockIndex& index) const;
-    bool ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos) const;
-
+    bool ReadRawBlock(std::vector<uint8_t>& block, const FlatFilePos& pos, bool fSkipAuxPow = false) const;
+    bool ReadBlockHeader(CBlockHeader& blockheader, const CBlockIndex& index) const;
     bool ReadBlockUndo(CBlockUndo& blockundo, const CBlockIndex& index) const;
+
+    template<typename T>
+    bool ReadBlockOrHeader(T& block, const FlatFilePos& pos) const;
+    template<typename T>
+    bool ReadBlockOrHeader(T& block, const CBlockIndex& index) const;
 
     void CleanupBlockRevFiles() const;
 };

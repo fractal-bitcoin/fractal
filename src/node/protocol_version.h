@@ -20,6 +20,9 @@ static const int MIN_PEER_PROTO_VERSION = 31800;
 //! BIP 0031, pong message, is enabled for all versions AFTER this one
 static const int BIP0031_VERSION = 60000;
 
+//! Version when we switched to a size-based "headers" limit.
+static const int SIZE_HEADERS_LIMIT_VERSION = 70000;
+
 //! "sendheaders" command and announcing blocks with headers starts with this version
 static const int SENDHEADERS_VERSION = 70012;
 

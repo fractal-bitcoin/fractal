@@ -115,6 +115,9 @@ struct Params {
     bool enforce_BIP94;
     bool fPowNoRetargeting;
     int64_t nPowTargetSpacing;
+    int64_t nPowTargetSpacingLegacy;
+    int64_t nPowTargetSpacingAuxPow;
+    int64_t nASERTHalfLife;
     int64_t nPowTargetTimespan;
     std::chrono::seconds PowTargetSpacing() const
     {
@@ -125,6 +128,17 @@ struct Params {
     uint256 nMinimumChainWork;
     /** By default assume that the signatures in ancestors of this block are valid */
     uint256 defaultAssumeValid;
+
+    /** Used by the ASERT DAA activated */
+    struct ASERTAnchor {
+        int nHeight;
+        uint32_t nBitsLegacy;
+        uint32_t nBitsAuxPow;
+        int64_t nBlockTime;
+    };
+
+    /** For chains with a checkpoint after the ASERT anchor block, this is always defined */
+    ASERTAnchor asertAnchorParams;
 
     /**
      * If true, witness commitments contain a payload equal to a Bitcoin Script solution
@@ -149,6 +163,10 @@ struct Params {
         } // no default case, so the compiler can warn about missing cases
         return std::numeric_limits<int>::max();
     }
+
+    /** Auxpow parameters */
+    int32_t nAuxpowChainId;
+    bool fStrictChainId;
 };
 
 } // namespace Consensus

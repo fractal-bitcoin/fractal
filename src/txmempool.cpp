@@ -844,6 +844,32 @@ std::vector<CTxMemPool::indexed_transaction_set::const_iterator> CTxMemPool::Get
     return iters;
 }
 
+void CTxMemPool::queryHashes(std::vector<uint256>& vtxid) const
+{
+    LOCK(cs);
+    auto iters = GetSortedDepthAndScore();
+
+    vtxid.clear();
+    vtxid.reserve(mapTx.size());
+
+    for (auto it : iters) {
+        vtxid.push_back(it->GetTx().GetHash());
+    }
+}
+
+void CTxMemPool::queryTransactions(std::vector<CTransactionRef>& vtx) const
+{
+    LOCK(cs);
+    auto iters = GetSortedDepthAndScore();
+
+    vtx.clear();
+    vtx.reserve(mapTx.size());
+
+    for (auto it : iters) {
+        vtx.push_back(it->GetSharedTx());
+    }
+}
+
 static TxMempoolInfo GetInfo(CTxMemPool::indexed_transaction_set::const_iterator it) {
     return TxMempoolInfo{it->GetSharedTx(), it->GetTime(), it->GetFee(), it->GetTxSize(), it->GetModifiedFee() - it->GetFee()};
 }
@@ -1129,7 +1155,7 @@ CFeeRate CTxMemPool::GetMinFee(size_t sizelimit) const {
         return CFeeRate(llround(rollingMinimumFeeRate));
 
     int64_t time = GetTime();
-    if (time > lastRollingFeeUpdate + 10) {
+    if (time > lastRollingFeeUpdate + 1) {
         double halflife = ROLLING_FEE_HALFLIFE;
         if (DynamicMemoryUsage() < sizelimit / 4)
             halflife /= 4;

@@ -11,6 +11,7 @@
 #include <flatfile.h>
 #include <kernel/cs_main.h>
 #include <primitives/block.h>
+#include <primitives/pureheader.h>
 #include <serialize.h>
 #include <sync.h>
 #include <uint256.h>
@@ -21,6 +22,11 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+
+namespace node
+{
+  class BlockManager;
+}
 
 /**
  * Maximum amount of time that a block timestamp is allowed to exceed the
@@ -175,6 +181,9 @@ public:
     //! VALID_TRANSACTIONS level.
     uint64_t m_chain_tx_count{0};
 
+    //! (memory only) Number of auxpow blocks in the chain up to and including this block.
+    unsigned int nAuxPow{0};
+
     //! Verification status of this block. See enum BlockStatus
     //!
     //! Note: this value is modified to show BLOCK_OPT_WITNESS during UTXO snapshot
@@ -196,7 +205,7 @@ public:
     //! (memory only) Maximum nTime in the chain up to and including this block.
     unsigned int nTimeMax{0};
 
-    explicit CBlockIndex(const CBlockHeader& block)
+    explicit CBlockIndex(const CPureBlockHeader& block)
         : nVersion{block.nVersion},
           hashMerkleRoot{block.hashMerkleRoot},
           nTime{block.nTime},
@@ -227,9 +236,14 @@ public:
         return ret;
     }
 
-    CBlockHeader GetBlockHeader() const
+    bool IsAuxpow() const
     {
-        CBlockHeader block;
+        return nVersion & CPureBlockHeader::VERSION_AUXPOW;
+    }
+
+    CPureBlockHeader GetPureHeader() const
+    {
+        CPureBlockHeader block;
         block.nVersion = nVersion;
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
@@ -239,6 +253,8 @@ public:
         block.nNonce = nNonce;
         return block;
     }
+
+    CBlockHeader GetBlockHeader(const node::BlockManager& blockman) const;
 
     uint256 GetBlockHash() const
     {
@@ -398,7 +414,7 @@ public:
 
     uint256 ConstructBlockHash() const
     {
-        CBlockHeader block;
+        CPureBlockHeader block;
         block.nVersion = nVersion;
         block.hashPrevBlock = hashPrev;
         block.hashMerkleRoot = hashMerkleRoot;

@@ -833,7 +833,7 @@ BOOST_AUTO_TEST_CASE(package_cpfp_tests)
     CScript child_spk = GetScriptForDestination(WitnessV0KeyHash(grandchild_key.GetPubKey()));
 
     // low-fee parent and high-fee child package
-    const CAmount coinbase_value{50 * COIN};
+    const CAmount coinbase_value{25 * COIN};
     const CAmount parent_value{coinbase_value - low_fee_amt};
     const CAmount child_value{parent_value - COIN};
 

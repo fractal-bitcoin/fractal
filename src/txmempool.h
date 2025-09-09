@@ -327,7 +327,7 @@ protected:
 
 public:
 
-    static const int ROLLING_FEE_HALFLIFE = 60 * 60 * 12; // public only for testing
+    static const int ROLLING_FEE_HALFLIFE = 60 * 36; // public only for testing
 
     struct CTxMemPoolEntry_Indices final : boost::multi_index::indexed_by<
             // sorted by txid
@@ -467,6 +467,9 @@ public:
     void removeForBlock(const std::vector<CTransactionRef>& vtx, unsigned int nBlockHeight) EXCLUSIVE_LOCKS_REQUIRED(cs);
 
     bool CompareDepthAndScore(const uint256& hasha, const uint256& hashb, bool wtxid=false);
+    void queryHashes(std::vector<uint256>& vtxid) const;
+    void queryTransactions(std::vector<CTransactionRef>& vtx) const;
+
     bool isSpent(const COutPoint& outpoint) const;
     unsigned int GetTransactionsUpdated() const;
     void AddTransactionsUpdated(unsigned int n);

@@ -429,6 +429,43 @@ static RPCHelpMan getrawmempool()
     };
 }
 
+UniValue MempoolTxToJSON(const CTxMemPool& pool)
+{
+    std::vector<CTransactionRef> vtx;
+    {
+        LOCK(pool.cs);
+        pool.queryTransactions(vtx);
+    }
+    UniValue a(UniValue::VARR);
+    for (const CTransactionRef& tx : vtx)
+        a.push_back(EncodeHexTx(*tx));
+
+    return a;
+}
+
+static RPCHelpMan getrawtxmempool()
+{
+    return RPCHelpMan{"getrawtxmempool",
+        "\nReturns all transaction hex in memory pool as a json array of string transaction hex.\n",
+        {
+        },
+        RPCResult{"for verbose = false",
+            RPCResult::Type::ARR, "", "",
+            {
+                {RPCResult::Type::STR_HEX, "", "The transaction hex"},
+            }
+        },
+        RPCExamples{
+            HelpExampleCli("getrawtxmempool", "")
+            + HelpExampleRpc("getrawtxmempool", "")
+        },
+        [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
+{
+    return MempoolTxToJSON(EnsureAnyMemPool(request.context));
+},
+    };
+}
+
 static RPCHelpMan getmempoolancestors()
 {
     return RPCHelpMan{"getmempoolancestors",
@@ -583,6 +620,37 @@ static RPCHelpMan getmempoolentry()
     UniValue info(UniValue::VOBJ);
     entryToJSON(mempool, info, *entry);
     return info;
+},
+    };
+}
+
+static RPCHelpMan removemempoolentry()
+{
+    return RPCHelpMan{"removemempoolentry",
+        "\nRemove mempool data for given transaction\n",
+        {
+            {"txid", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The transaction id (must be in mempool)"},
+        },
+        RPCResult{
+            RPCResult::Type::BOOL, "", "remove tx ok"},
+        RPCExamples{
+            HelpExampleCli("removemempoolentry", "\"mytxid\"")
+            + HelpExampleRpc("removemempoolentry", "\"mytxid\"")
+        },
+        [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
+{
+    uint256 hash = ParseHashV(request.params[0], "parameter 1");
+
+    CTxMemPool& mempool = EnsureAnyMemPool(request.context);
+    LOCK(mempool.cs);
+
+    CTxMemPool::txiter it = mempool.mapTx.find(hash);
+    if (it == mempool.mapTx.end()) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Transaction not in mempool");
+    }
+
+    mempool.removeRecursive(it->GetTx(), MemPoolRemovalReason::REPLACED);
+    return true;
 },
     };
 }
@@ -1131,10 +1199,12 @@ void RegisterMempoolRPCCommands(CRPCTable& t)
         {"blockchain", &getmempoolancestors},
         {"blockchain", &getmempooldescendants},
         {"blockchain", &getmempoolentry},
+        {"blockchain", &removemempoolentry},
         {"blockchain", &gettxspendingprevout},
         {"blockchain", &getmempoolinfo},
         {"blockchain", &getrawmempool},
         {"blockchain", &importmempool},
+        {"blockchain", &getrawtxmempool},
         {"blockchain", &savemempool},
         {"hidden", &getorphantxs},
         {"rawtransactions", &submitpackage},
