@@ -731,7 +731,7 @@ static std::vector<uint8_t> GetRawBlockChecked(BlockManager& blockman, const CBl
         pos = blockindex.GetBlockPos();
     }
 
-    if (!blockman.ReadRawBlock(data, pos, fAuxPow)) {
+    if (!blockman.ReadRawBlock(data, pos, !fAuxPow)) {
         // Block not found on disk. This shouldn't normally happen unless the block was
         // pruned right after we released the lock above.
         throw JSONRPCError(RPC_MISC_ERROR, "Block not found on disk");
