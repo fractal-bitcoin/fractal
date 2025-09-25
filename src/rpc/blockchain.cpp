@@ -877,12 +877,12 @@ static RPCHelpMan getblock()
         }
     }
 
-    const std::vector<uint8_t> block_data{GetRawBlockChecked(chainman.m_blockman, *pblockindex, fAuxPow)};
-
     if (verbosity <= 0) {
+        const std::vector<uint8_t> block_data{GetRawBlockChecked(chainman.m_blockman, *pblockindex, fAuxPow)};
         return HexStr(block_data);
     }
 
+    const std::vector<uint8_t> block_data{GetRawBlockChecked(chainman.m_blockman, *pblockindex, true)};
     DataStream block_stream{block_data};
     CBlock block{};
     block_stream >> TX_WITH_WITNESS(block);
@@ -898,7 +898,7 @@ static RPCHelpMan getblock()
 
     auto result = blockToJSON(chainman.m_blockman, block, *tip, *pblockindex, tx_verbosity, chainman.GetConsensus().powLimit);
 
-    if (block.auxpow)
+    if (fAuxPow && block.auxpow)
         result.pushKV("auxpow", AuxpowToJSON(*block.auxpow, verbosity >= 1, chainman.ActiveChainstate()));
 
     return result;
