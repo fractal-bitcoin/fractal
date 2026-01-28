@@ -19,6 +19,7 @@
 #include <policy/feerate.h>
 #include <policy/policy.h>
 #include <pow.h>
+#include <primitives/indexer.h>
 #include <primitives/transaction.h>
 #include <util/moneystr.h>
 #include <util/time.h>
@@ -175,6 +176,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock()
     if (m_options.set_auxpow) {
         CAuxPow::initAuxPow(*pblock);
     }
+    if (m_options.set_indexer) {
+        CIndexerProof::initIndexerProof(*pblock);
+    }
+
     pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
     pblock->nNonce         = 0;
     pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);

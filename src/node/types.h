@@ -31,6 +31,7 @@ enum class TransactionError {
 
 struct BlockCreateOptions {
     bool set_auxpow{false};
+    bool set_indexer{false};
     /**
      * Set false to omit mempool transactions
      */

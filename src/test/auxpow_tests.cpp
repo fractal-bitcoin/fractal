@@ -243,7 +243,7 @@ BOOST_FIXTURE_TEST_CASE (check_auxpow, BasicTestingSetup)
   CAuxPow auxpow;
 
   const uint256 hashAux = ArithToUint256 (arith_uint256(12345));
-  const int32_t ourChainId = params.nAuxpowChainId;
+  const int32_t ourChainId = CPureBlockHeader::AUXPOW_CHAIN_ID;
   const unsigned height = 30;
   const int nonce = 7;
   int index;
@@ -435,18 +435,18 @@ BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
   mineBlock (block, true);
   BOOST_CHECK (!CheckProofOfWork (block, params));
 
-  block.SetBaseVersion (2, params.nAuxpowChainId);
+  block.SetBaseVersion (2, CPureBlockHeader::AUXPOW_CHAIN_ID);
   mineBlock (block, true);
   BOOST_CHECK (CheckProofOfWork (block, params));
 
-  block.SetChainId (params.nAuxpowChainId + 1);
+  block.SetChainId (CPureBlockHeader::AUXPOW_CHAIN_ID + 1);
   mineBlock (block, true);
   BOOST_CHECK (!CheckProofOfWork (block, params));
 
   /* Check the case when the block does not have auxpow (this is true
      right now).  */
 
-  block.SetChainId (params.nAuxpowChainId);
+  block.SetChainId (CPureBlockHeader::AUXPOW_CHAIN_ID);
   block.SetAuxpowVersion (true);
   mineBlock (block, true);
   BOOST_CHECK (!CheckProofOfWork (block, params));
@@ -462,7 +462,7 @@ BOOST_FIXTURE_TEST_CASE (auxpow_pow, BasicTestingSetup)
 
   CAuxpowBuilder builder(5, 42);
   CAuxPow auxpow;
-  const int32_t ourChainId = params.nAuxpowChainId;
+  const int32_t ourChainId = CPureBlockHeader::AUXPOW_CHAIN_ID;
   const unsigned height = 3;
   const int nonce = 7;
   const int index = CAuxPow::getExpectedIndex (nonce, ourChainId, height);

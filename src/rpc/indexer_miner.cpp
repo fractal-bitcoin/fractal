@@ -1,15 +1,15 @@
-// Copyright (c) 2018-2024 Daniel Kraft
+// Copyright (c) 2024 The Fractal Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <rpc/auxpow_miner.h>
+#include <rpc/indexer_miner.h>
 
 #include <arith_uint256.h>
-#include <auxpow.h>
 #include <chainparams.h>
 #include <consensus/merkle.h>
 #include <net.h>
 #include <node/context.h>
+#include <primitives/indexer.h>
 #include <rpc/blockchain.h>
 #include <rpc/protocol.h>
 #include <rpc/request.h>
@@ -25,7 +25,7 @@ namespace
 
 using interfaces::Mining;
 
-void auxMiningCheck(const node::NodeContext& node)
+void indexerMiningCheck(const node::NodeContext& node)
 {
   const auto& connman = EnsureConnman (node);
   const auto& chainman = EnsureChainman (node);
@@ -39,12 +39,18 @@ void auxMiningCheck(const node::NodeContext& node)
         && !Params ().MineBlocksOnDemand ())
     throw JSONRPCError (RPC_CLIENT_IN_INITIAL_DOWNLOAD,
                         "Fractal Bitcoin is downloading blocks...");
+
+  // Check if indexer blocks are enabled (nActivationHeight > 0)
+  const auto& indexerParams = Params().GetConsensus().indexerParams;
+  if (indexerParams.nActivationHeight <= 0)
+    throw JSONRPCError (RPC_MISC_ERROR,
+                        "Indexer blocks are not enabled on this network");
 }
 
 }  // anonymous namespace
 
 const CBlock*
-AuxpowMiner::getCurrentBlock (const ChainstateManager& chainman, Mining& miner,
+IndexerMiner::getCurrentBlock (const ChainstateManager& chainman, Mining& miner,
                               const CTxMemPool& mempool,
                               const CScript& scriptPubKey, uint256& target)
 {
@@ -74,7 +80,7 @@ AuxpowMiner::getCurrentBlock (const ChainstateManager& chainman, Mining& miner,
         /* Create new block with nonce = 0 and extraNonce = 1.  */
         node::BlockCreateOptions opt;
         opt.coinbase_output_script = scriptPubKey;
-        opt.set_auxpow = true;
+        opt.set_indexer = true;  // Use indexer flag for indexer blocks
         std::unique_ptr<interfaces::BlockTemplate> newTemplate
             = miner.createNewBlock (opt);
         if (newTemplate == nullptr)
@@ -90,12 +96,12 @@ AuxpowMiner::getCurrentBlock (const ChainstateManager& chainman, Mining& miner,
         /* Finalise it by setting the version and building the merkle root.  */
         newBlock.hashMerkleRoot = BlockMerkleRoot (newBlock);
         newBlock.SetAuxpowVersion (true);
-        newBlock.SetChainId (CPureBlockHeader::AUXPOW_CHAIN_ID);
+        newBlock.SetChainId (CPureBlockHeader::INDEXER_CHAIN_ID);
 
         /* Save in our map of constructed blocks.  */
         pblockCur = &newBlock;
         curBlocks.emplace(scriptID, pblockCur);
-        mapBlocks[pblockCur->GetHash ()] = pblockCur;
+        mapBlocks[pblockCur->hashPrevBlock] = pblockCur;
       }
   }
 
@@ -117,29 +123,29 @@ AuxpowMiner::getCurrentBlock (const ChainstateManager& chainman, Mining& miner,
 }
 
 const CBlock*
-AuxpowMiner::lookupSavedBlock (const std::string& hashHex) const
+IndexerMiner::lookupSavedBlock (const std::string& prevHashHex) const
 {
   AssertLockHeld (cs);
 
-  const auto hash = uint256::FromHex (hashHex);
+  const auto hash = uint256::FromHex (prevHashHex);
   if (!hash)
-    throw JSONRPCError (RPC_INVALID_PARAMETER, "invalid block hash hex");
+    throw JSONRPCError (RPC_INVALID_PARAMETER, "invalid previousblockhash hex");
 
   const auto iter = mapBlocks.find (*hash);
   if (iter == mapBlocks.end ())
-    throw JSONRPCError (RPC_INVALID_PARAMETER, "block hash unknown");
+    throw JSONRPCError (RPC_INVALID_PARAMETER, "block with this previousblockhash unknown");
 
   return iter->second;
 }
 
 UniValue
-AuxpowMiner::createAuxBlock (const JSONRPCRequest& request,
-                             const CScript& scriptPubKey)
+IndexerMiner::createIndexerBlock (const JSONRPCRequest& request,
+                                  const CScript& scriptPubKey)
 {
   LOCK (cs);
 
   const auto& node = EnsureAnyNodeContext (request.context);
-  auxMiningCheck (node);
+  indexerMiningCheck (node);
   const auto& mempool = EnsureMemPool (node);
   const auto& chainman = EnsureChainman (node);
   auto& mining = EnsureMining (node);
@@ -148,55 +154,67 @@ AuxpowMiner::createAuxBlock (const JSONRPCRequest& request,
   const CBlock* pblock = getCurrentBlock (chainman, mining, mempool,
                                           scriptPubKey, target);
 
+  // Calculate cursor from previous block hash
+  uint16_t cursor = CIndexerProof::GetCursor(pblock->hashPrevBlock);
+
   UniValue result(UniValue::VOBJ);
-  result.pushKV ("hash", pblock->GetHash ().GetHex ());
-  result.pushKV ("chainid", pblock->GetChainId ());
+  // Return all block header fields needed for PoW mining
+  result.pushKV ("version", pblock->nVersion);
   result.pushKV ("previousblockhash", pblock->hashPrevBlock.GetHex ());
+  result.pushKV ("merkleroot", pblock->hashMerkleRoot.GetHex ());
+  result.pushKV ("time", static_cast<int64_t>(pblock->nTime));
+  result.pushKV ("bits", strprintf ("%08x", pblock->nBits));
+  result.pushKV ("chainid", pblock->GetChainId ());
   result.pushKV ("coinbasevalue",
                  static_cast<int64_t> (pblock->vtx[0]->vout[0].nValue));
-  result.pushKV ("bits", strprintf ("%08x", pblock->nBits));
   result.pushKV ("height", static_cast<int64_t> (pindexPrev->nHeight + 1));
-  result.pushKV ("_target", HexStr (target));
+  result.pushKV ("cursor", cursor);
+  result.pushKV ("target", HexStr (target));
 
   return result;
 }
 
 bool
-AuxpowMiner::submitAuxBlock (const JSONRPCRequest& request,
-                             const std::string& hashHex,
-                             const std::string& auxpowHex) const
+IndexerMiner::submitIndexerBlock (const JSONRPCRequest& request,
+                                  const std::string& prevHashHex,
+                                  uint32_t nTime,
+                                  uint32_t nNonce,
+                                  const std::string& indexerProofHex) const
 {
   const auto& node = EnsureAnyNodeContext (request.context);
-  auxMiningCheck (node);
+  indexerMiningCheck (node);
   auto& chainman = EnsureChainman (node);
 
   std::shared_ptr<CBlock> shared_block;
   {
     LOCK (cs);
-    const CBlock* pblock = lookupSavedBlock (hashHex);
+    const CBlock* pblock = lookupSavedBlock (prevHashHex);
     shared_block = std::make_shared<CBlock> (*pblock);
   }
 
-  const std::vector<unsigned char> vchAuxPow = ParseHex (auxpowHex);
-  DataStream ss(vchAuxPow);
-  std::unique_ptr<CAuxPow> pow(new CAuxPow ());
-  ss >> *pow;
-  shared_block->SetAuxpow (std::move (pow));
-  assert (shared_block->GetHash ().GetHex () == hashHex);
+  // Set the time and nonce found by the indexer miner
+  shared_block->nTime = nTime;
+  shared_block->nNonce = nNonce;
+
+  const std::vector<unsigned char> vchIndexerProof = ParseHex (indexerProofHex);
+  DataStream ss(vchIndexerProof);
+  std::unique_ptr<CIndexerProof> proof(new CIndexerProof ());
+  ss >> *proof;
+  shared_block->SetIndexerProof (std::move (proof));
 
   return chainman.ProcessNewBlock (shared_block, /*force_processing=*/true,
                                    /*min_pow_checked=*/true, nullptr);
 }
 
-AuxpowMiner&
-AuxpowMiner::get ()
+IndexerMiner&
+IndexerMiner::get ()
 {
-  static AuxpowMiner* instance = nullptr;
+  static IndexerMiner* instance = nullptr;
   static RecursiveMutex lock;
 
   LOCK (lock);
   if (instance == nullptr)
-    instance = new AuxpowMiner ();
+    instance = new IndexerMiner ();
 
   return *instance;
 }

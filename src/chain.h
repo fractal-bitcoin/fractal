@@ -184,6 +184,9 @@ public:
     //! (memory only) Number of auxpow blocks in the chain up to and including this block.
     unsigned int nAuxPow{0};
 
+    //! (memory only) Number of indexer blocks in the chain up to and including this block.
+    unsigned int nIndexer{0};
+
     //! Verification status of this block. See enum BlockStatus
     //!
     //! Note: this value is modified to show BLOCK_OPT_WITNESS during UTXO snapshot
@@ -238,7 +241,22 @@ public:
 
     bool IsAuxpow() const
     {
-        return nVersion & CPureBlockHeader::VERSION_AUXPOW;
+        return (nVersion & CPureBlockHeader::VERSION_AUXPOW) &&
+               ((nVersion / CPureBlockHeader::VERSION_CHAIN_START) == CPureBlockHeader::AUXPOW_CHAIN_ID);
+    }
+
+    bool IsIndexer() const
+    {
+        return (nVersion & CPureBlockHeader::VERSION_AUXPOW) &&
+               ((nVersion / CPureBlockHeader::VERSION_CHAIN_START) == CPureBlockHeader::INDEXER_CHAIN_ID);
+    }
+
+    /** Get the count of legacy blocks (non-AuxPoW, non-Indexer) up to this block */
+    unsigned int GetLegacyCount() const
+    {
+        // Legacy count = total height - auxpow count - indexer count
+        // Note: nHeight is 0-indexed, so total blocks = nHeight + 1
+        return static_cast<unsigned int>(nHeight + 1) - nAuxPow - nIndexer;
     }
 
     CPureBlockHeader GetPureHeader() const

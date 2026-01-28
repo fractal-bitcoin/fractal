@@ -231,10 +231,14 @@ CBlockIndex* BlockManager::AddToBlockIndex(const CBlockHeader& block, CBlockInde
     }
 
     pindexNew->nAuxPow = 0;
+    pindexNew->nIndexer = 0;
     if (pindexNew->pprev) {
         pindexNew->nAuxPow = pindexNew->pprev->nAuxPow;
+        pindexNew->nIndexer = pindexNew->pprev->nIndexer;
     }
-    if (block.IsAuxpow()) {
+    if (block.IsIndexer()) {
+        pindexNew->nIndexer++;
+    } else if (block.IsAuxpow()) {
         pindexNew->nAuxPow++;
     }
 
@@ -455,10 +459,14 @@ bool BlockManager::LoadBlockIndex(const std::optional<uint256>& snapshot_blockha
         previous_index = pindex;
 
         pindex->nAuxPow = 0;
+        pindex->nIndexer = 0;
         if (pindex->pprev) {
             pindex->nAuxPow = pindex->pprev->nAuxPow;
+            pindex->nIndexer = pindex->pprev->nIndexer;
         }
-        if (pindex->IsAuxpow()) {
+        if (pindex->IsIndexer()) {
+            pindex->nIndexer++;
+        } else if (pindex->IsAuxpow()) {
             pindex->nAuxPow++;
         }
 
@@ -1157,6 +1165,8 @@ FlatFilePos BlockManager::WriteBlock(const CBlock& block, int nHeight)
     unsigned int nSizeAuxPow = 0;
     if (block.IsAuxpow() && block.auxpow != nullptr) {
         nSizeAuxPow = GetSerializeSize(*block.auxpow);
+    } else if (block.IsIndexer() && block.indexerProof != nullptr) {
+        nSizeAuxPow = GetSerializeSize(*block.indexerProof);
     }
 
     // Write index header

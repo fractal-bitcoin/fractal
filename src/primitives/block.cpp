@@ -14,10 +14,26 @@ void CBlockHeader::SetAuxpow (std::unique_ptr<CAuxPow> apow)
     {
         auxpow.reset(apow.release());
         SetAuxpowVersion(true);
+        SetChainId(AUXPOW_CHAIN_ID);
     } else
     {
         auxpow.reset();
         SetAuxpowVersion(false);
+    }
+}
+
+void CBlockHeader::SetIndexerProof(std::unique_ptr<CIndexerProof> proof)
+{
+    if (proof != nullptr)
+    {
+        indexerProof.reset(proof.release());
+        // Set VERSION_AUXPOW flag and INDEXER_CHAIN_ID
+        SetAuxpowVersion(true);
+        SetChainId(INDEXER_CHAIN_ID);
+    } else
+    {
+        indexerProof.reset();
+        // Note: We don't clear the auxpow version flag here as it might be used for auxpow
     }
 }
 

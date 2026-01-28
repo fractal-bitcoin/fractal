@@ -125,8 +125,12 @@ public:
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
 
-        consensus.nAuxpowChainId = 0x2024;
         consensus.fStrictChainId = true;
+
+        // Indexer block parameters (mainnet)
+        consensus.indexerParams.nActivationHeight = 1500000;
+        // Cold wallet public key (x-only, 32 bytes)
+        consensus.indexerParams.coldPubKey = "5cd26f06fb752947bd414bafeedbaefe5461c543e6f7b404a7900d0ad4f0247d"_hex_u8;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
@@ -257,8 +261,12 @@ public:
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
 
-        consensus.nAuxpowChainId = 0x2024;
         consensus.fStrictChainId = true;
+
+        // Indexer block parameters (testnet)
+        consensus.indexerParams.nActivationHeight = 1;  // Enabled from height 1
+        // Cold wallet public key (x-only, 32 bytes) - same as mainnet for testing
+        consensus.indexerParams.coldPubKey = "5cd26f06fb752947bd414bafeedbaefe5461c543e6f7b404a7900d0ad4f0247d"_hex_u8;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
@@ -586,7 +594,6 @@ public:
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
 
-        consensus.nAuxpowChainId = 0x2024;
         consensus.fStrictChainId = true;
 
         // RegTest has no hard-coded anchor block

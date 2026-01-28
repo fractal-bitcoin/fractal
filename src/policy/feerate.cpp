@@ -13,10 +13,18 @@ CFeeRate::CFeeRate(const CAmount& nFeePaid, uint32_t num_bytes)
 {
     const int64_t nSize{num_bytes};
 
-    if (nSize > 0) {
-        nSatoshisPerK = nFeePaid * 1000 / nSize;
+    if (nFeePaid <= MAX_MONEY_FEE) {
+        if (nSize > 0) {
+            nSatoshisPerK = nFeePaid * 1000 / nSize;
+        } else {
+            nSatoshisPerK = 0;
+        }
     } else {
-        nSatoshisPerK = 0;
+        if (nSize > 0) {
+            nSatoshisPerK = nFeePaid / nSize * 1000;
+        } else {
+            nSatoshisPerK = 0;
+        }
     }
 }
 

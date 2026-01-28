@@ -26,4 +26,5 @@ static constexpr CAmount COIN = 100000000;
 static constexpr CAmount MAX_MONEY = 210000000 * COIN;
 inline bool MoneyRange(const CAmount& nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
+static constexpr CAmount MAX_MONEY_FEE = 92233720 * COIN;
 #endif // BITCOIN_CONSENSUS_AMOUNT_H

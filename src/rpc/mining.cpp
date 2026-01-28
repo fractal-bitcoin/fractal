@@ -26,6 +26,7 @@
 #include <policy/ephemeral_policy.h>
 #include <pow.h>
 #include <rpc/auxpow_miner.h>
+#include <rpc/indexer_miner.h>
 #include <rpc/blockchain.h>
 #include <rpc/mining.h>
 #include <rpc/server.h>
@@ -1192,6 +1193,86 @@ static RPCHelpMan submitauxblock()
 }
 
 /* ************************************************************************** */
+/* Indexer mining.  */
+
+static RPCHelpMan createindexerblock()
+{
+    return RPCHelpMan{"createindexerblock",
+        "\nCreates a new indexer block and returns information required to"
+        " mine and submit it. The indexer miner should:\n"
+        "1. Construct indexerProof (without hotSignature)\n"
+        "2. Loop nonce to find PoW hash < target\n"
+        "3. Sign the final blockHash with hot wallet\n"
+        "4. Submit via submitindexerblock\n",
+        {
+            {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "Payout address for the coinbase transaction"},
+        },
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::NUM, "version", "block version"},
+                {RPCResult::Type::STR_HEX, "previousblockhash", "hash of the previous block"},
+                {RPCResult::Type::STR_HEX, "merkleroot", "merkle root of the block"},
+                {RPCResult::Type::NUM, "time", "block timestamp"},
+                {RPCResult::Type::STR_HEX, "bits", "compressed target of the block"},
+                {RPCResult::Type::NUM, "chainid", "chain ID for this block (0x2026 for indexer)"},
+                {RPCResult::Type::NUM, "coinbasevalue", "value of the block's coinbase"},
+                {RPCResult::Type::NUM, "height", "height of the block"},
+                {RPCResult::Type::NUM, "cursor", "cursor value derived from previous block hash"},
+                {RPCResult::Type::STR_HEX, "target", "target for PoW hash verification"},
+            },
+        },
+        RPCExamples{
+          HelpExampleCli("createindexerblock", "\"address\"")
+          + HelpExampleRpc("createindexerblock", "\"address\"")
+        },
+        [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
+{
+
+    // Check coinbase payout address
+    const CTxDestination coinbaseScript
+      = DecodeDestination(request.params[0].get_str());
+    if (!IsValidDestination(coinbaseScript)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
+                           "Error: Invalid coinbase payout address");
+    }
+    const CScript scriptPubKey = GetScriptForDestination(coinbaseScript);
+
+    return IndexerMiner::get ().createIndexerBlock(request, scriptPubKey);
+},
+    };
+}
+
+static RPCHelpMan submitindexerblock()
+{
+    return RPCHelpMan{"submitindexerblock",
+        "\nSubmits a mined indexer block that was previously"
+        " created by 'createindexerblock'.\n",
+        {
+            {"previousblockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "Previous block hash (from createindexerblock)"},
+            {"time", RPCArg::Type::NUM, RPCArg::Optional::NO, "Block timestamp (can be adjusted for mining)"},
+            {"nonce", RPCArg::Type::NUM, RPCArg::Optional::NO, "Nonce found by PoW mining"},
+            {"indexerproof", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "Serialised indexer proof (168 bytes)"},
+        },
+        RPCResult{
+            RPCResult::Type::BOOL, "", "whether the submitted block was accepted"
+        },
+        RPCExamples{
+            HelpExampleCli("submitindexerblock", "\"previousblockhash\" 1706832000 12345 \"indexerproof\"")
+            + HelpExampleRpc("submitindexerblock", "\"previousblockhash\", 1706832000, 12345, \"indexerproof\"")
+        },
+        [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
+{
+    return IndexerMiner::get ().submitIndexerBlock(request,
+                                              request.params[0].get_str(),
+                                              request.params[1].getInt<uint32_t>(),
+                                              request.params[2].getInt<uint32_t>(),
+                                              request.params[3].get_str());
+},
+    };
+}
+
+/* ************************************************************************** */
 
 void RegisterMiningRPCCommands(CRPCTable& t)
 {
@@ -1206,6 +1287,9 @@ void RegisterMiningRPCCommands(CRPCTable& t)
 
         {"mining", &createauxblock},
         {"mining", &submitauxblock},
+
+        {"mining", &createindexerblock},
+        {"mining", &submitindexerblock},
 
         {"hidden", &generatetoaddress},
         {"hidden", &generatetodescriptor},

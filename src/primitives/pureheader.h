@@ -19,15 +19,19 @@
  */
 class CPureBlockHeader
 {
-private:
-
-    /** Bits above are reserved for the auxpow chain ID.  */
-    static const int32_t VERSION_CHAIN_START = (1 << 16);
-
 public:
 
     /* Modifiers to the version.  */
-    static const int32_t VERSION_AUXPOW = (1 << 8);
+    static constexpr int32_t VERSION_AUXPOW = (1 << 8);
+
+    /** Bits above are reserved for the auxpow chain ID.  */
+    static constexpr int32_t VERSION_CHAIN_START = (1 << 16);
+
+    /** Chain ID for AuxPoW blocks.  */
+    static constexpr int32_t AUXPOW_CHAIN_ID = 0x2024;
+
+    /** Chain ID for Indexer blocks.  */
+    static constexpr int32_t INDEXER_CHAIN_ID = 0x2026;
 
     // header
     int32_t nVersion;
@@ -119,11 +123,30 @@ public:
 
     /**
      * Check if the auxpow flag is set in the version.
-     * @return True iff this block version is marked as auxpow.
+     * @return True if this block version is marked as auxpow.
+     */
+    inline bool IsAuxpowFlag() const
+    {
+        return nVersion & VERSION_AUXPOW;
+    }
+
+    /**
+     * Check if this is an Indexer block.
+     * Indexer blocks use VERSION_AUXPOW flag with INDEXER_CHAIN_ID.
+     * @return True if this block is an Indexer block.
+     */
+    inline bool IsIndexer() const
+    {
+        return (nVersion & VERSION_AUXPOW) && (GetChainId() == INDEXER_CHAIN_ID);
+    }
+
+    /**
+     * Check if this is a standard AuxPoW block (not Indexer).
+     * @return True if this block is an AuxPoW block.
      */
     inline bool IsAuxpow() const
     {
-        return nVersion & VERSION_AUXPOW;
+        return (nVersion & VERSION_AUXPOW) && (GetChainId() == AUXPOW_CHAIN_ID);
     }
 
     /**
@@ -136,15 +159,6 @@ public:
             nVersion |= VERSION_AUXPOW;
         else
             nVersion &= ~VERSION_AUXPOW;
-    }
-
-    /**
-     * Check whether this is a "legacy" block without chain ID.
-     * @return True iff it is.
-     */
-    inline bool IsLegacy() const
-    {
-        return nVersion == 1;
     }
 };
 
