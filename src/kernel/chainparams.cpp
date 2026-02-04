@@ -264,7 +264,7 @@ public:
         consensus.fStrictChainId = true;
 
         // Indexer block parameters (testnet)
-        consensus.indexerParams.nActivationHeight = 1;  // Enabled from height 1
+        consensus.indexerParams.nActivationHeight = 1403950;
         // Cold wallet public key (x-only, 32 bytes) - same as mainnet for testing
         consensus.indexerParams.coldPubKey = "5cd26f06fb752947bd414bafeedbaefe5461c543e6f7b404a7900d0ad4f0247d"_hex_u8;
 
