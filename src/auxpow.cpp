@@ -189,7 +189,7 @@ CAuxPow::CheckMerkleBranch (uint256 hash,
 std::unique_ptr<CAuxPow>
 CAuxPow::createAuxPow (const CPureBlockHeader& header)
 {
-  assert (header.IsAuxpow ());
+  assert (header.IsAuxpowFlag ());
 
   /* Build a minimal coinbase script input for merge-mining.  */
   const uint256 blockHash = header.GetHash ();
@@ -230,6 +230,7 @@ CAuxPow::initAuxPow (CBlockHeader& header)
   /* Set auxpow flag right now, since we take the block hash below when creating
      the minimal auxpow for header.  */
   header.SetAuxpowVersion(true);
+  header.SetChainId (CPureBlockHeader::AUXPOW_CHAIN_ID);
 
   std::unique_ptr<CAuxPow> apow = createAuxPow (header);
   CPureBlockHeader& result = apow->parentBlock;

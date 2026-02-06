@@ -168,9 +168,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         return pindexLast->nBits;
     }
 
+    if (pblock->IsIndexer()) {
+        return UintToArith256(params.powLimit).GetCompact();
+    }
+
     assert(params.asertAnchorParams.nHeight > 0);
     if (pindexLast->nHeight <= params.asertAnchorParams.nHeight) {
-        return params.asertAnchorParams.nBitsLegacy;
+        return params.asertAnchorParams.nBitsLegacy; // Do not fix: a historical bug, what if it's a auxpow block?
     }
 
     // Special difficulty rule for testnet

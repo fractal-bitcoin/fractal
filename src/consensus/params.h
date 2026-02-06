@@ -8,6 +8,7 @@
 
 #include <uint256.h>
 
+#include <array>
 #include <chrono>
 #include <limits>
 #include <map>
@@ -165,8 +166,14 @@ struct Params {
     }
 
     /** Auxpow parameters */
-    int32_t nAuxpowChainId;
     bool fStrictChainId;
+
+    /** Indexer block parameters */
+    struct IndexerParams {
+        std::array<unsigned char, 32> coldPubKey{};
+        int nActivationHeight{0};  // 0 means disabled, >0 means enabled from that height
+    };
+    IndexerParams indexerParams;
 };
 
 } // namespace Consensus

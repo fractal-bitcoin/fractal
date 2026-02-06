@@ -106,6 +106,7 @@ add_library(bitcoin_consensus STATIC EXCLUDE_FROM_ALL
   consensus/tx_check.cpp
   hash.cpp
   primitives/block.cpp
+  primitives/indexer.cpp
   primitives/pureheader.cpp
   primitives/transaction.cpp
   pubkey.cpp
@@ -288,6 +289,7 @@ add_library(bitcoin_node STATIC EXCLUDE_FROM_ALL
   policy/truc_policy.cpp
   rest.cpp
   rpc/auxpow_miner.cpp
+  rpc/indexer_miner.cpp
   rpc/blockchain.cpp
   rpc/external_signer.cpp
   rpc/fees.cpp

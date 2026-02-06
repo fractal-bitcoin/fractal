@@ -39,6 +39,7 @@
 #include <policy/truc_policy.h>
 #include <pow.h>
 #include <primitives/block.h>
+#include <primitives/indexer.h>
 #include <primitives/transaction.h>
 #include <random.h>
 #include <script/script.h>
@@ -1948,13 +1949,61 @@ bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params
        the chain ID is correct.  Legacy blocks are not allowed since
        the merge-mining start, which is checked in AcceptBlockHeader
        where the height is known.  */
-    if (block.IsAuxpow() && params.fStrictChainId
-        && block.GetChainId() != params.nAuxpowChainId) {
+    if (block.IsAuxpowFlag() && params.fStrictChainId
+        && block.GetChainId() != CPureBlockHeader::AUXPOW_CHAIN_ID
+        && block.GetChainId() != CPureBlockHeader::INDEXER_CHAIN_ID) {
         LogError("%s : block does not have our chain ID"
                      " (got %d, expected %d, full nVersion %d)",
                      __func__, block.GetChainId(),
-                     params.nAuxpowChainId, block.nVersion);
+                     CPureBlockHeader::AUXPOW_CHAIN_ID, block.nVersion);
         return false;
+    }
+
+    /* Check for Indexer block first.  */
+    if (block.IsIndexer()) {
+        // Check that indexer proof exists
+        if (!block.indexerProof) {
+            LogError("%s : no indexer proof on indexer block", __func__);
+            return false;
+        }
+
+        // Check authorization timestamp expiry (nAuthTimestamp is expiry time)
+        // Block time must be <= authorization expiry timestamp
+        int64_t nBlockTime = block.GetBlockTime();
+        int64_t nAuthExpiry = static_cast<int64_t>(block.indexerProof->nAuthTimestamp);
+        if (nBlockTime > nAuthExpiry) {
+            LogError("%s : indexer authorization expired (blockTime=%d, authExpiry=%d)", __func__, nBlockTime, nAuthExpiry);
+            return false;
+        }
+
+        // Check cursor is in authorized range (using hashPrevBlock from block header)
+        uint16_t cursor = CIndexerProof::GetCursor(block.hashPrevBlock);
+        if (!block.indexerProof->IsCursorInRange(cursor)) {
+            LogError("%s : cursor %u not in range [%u, %u]", __func__,
+                     cursor, block.indexerProof->nRangeStart, block.indexerProof->nRangeEnd);
+            return false;
+        }
+
+        if (!CheckProofOfWork(block.indexerProof->GetProofOfWorkHash(block), block.nBits, params)) {
+            LogError("%s : indexer proof of work failed", __func__);
+            return false;
+        }
+        // Construct cold wallet public key from params
+        XOnlyPubKey coldPubKey{params.indexerParams.coldPubKey};
+
+        // Verify cold wallet signature
+        if (!block.indexerProof->VerifyColdSignature(coldPubKey)) {
+            LogError("%s : indexer cold signature verification failed", __func__);
+            return false;
+        }
+
+        // Verify hot wallet signature
+        if (!block.indexerProof->VerifyHotSignature(block.GetHash())) {
+            LogError("%s : indexer hot signature verification failed", __func__);
+            return false;
+        }
+
+        return true;
     }
 
     /* If there is no auxpow, just check the block hash.  */
@@ -1982,7 +2031,7 @@ bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params
     /* Temporary check:  Disallow parent blocks with auxpow version.  This is
        for compatibility with the old client.  */
     /* FIXME: Remove this check with a hardfork later on.  */
-    if (block.auxpow->getParentBlock().IsAuxpow()) {
+    if (block.auxpow->getParentBlock().IsAuxpowFlag()) {
         LogError("%s : auxpow parent block has auxpow version", __func__);
         return false;
     }
@@ -4192,9 +4241,46 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
 
     const Consensus::Params& consensusParams = chainman.GetConsensus();
 
-    // Check proof of work
+    // Check proof of work for non-indexer blocks
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
         return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "bad-diffbits", "incorrect proof of work");
+
+    // Check for Indexer block contextual rules
+    if (block.IsIndexer()) {
+        const auto& indexerParams = consensusParams.indexerParams;
+
+        // 1. Check activation height
+        if (nHeight < indexerParams.nActivationHeight) {
+            return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "bad-indexer-not-activated",
+                                 "indexer blocks not yet activated at this height");
+        }
+
+        // 2. Check consecutive limit: no two consecutive indexer blocks
+        if (pindexPrev->IsIndexer()) {
+            return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "bad-indexer-consecutive",
+                                 "consecutive indexer blocks not allowed");
+        }
+
+        // 3. Check quantity constraints: nIndexer cannot exceed BOTH nLegacy AND nAuxPow
+        // Only reject if indexer count would exceed both legacy and auxpow counts simultaneously
+        // Counts are calculated from the activation height, not from genesis
+        const CBlockIndex* pindexPrevActivation = pindexPrev->GetAncestor(indexerParams.nActivationHeight - 1);
+        if (!pindexPrevActivation) {
+            return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "bad-indexer-activation-error",
+                                 "cannot find block at activation height");
+        }
+
+        unsigned int nAuxPow = pindexPrev->nAuxPow - pindexPrevActivation->nAuxPow;
+        unsigned int nLegacy = pindexPrev->nHeight - pindexPrevActivation->nHeight - nAuxPow - pindexPrev->nIndexer;
+        unsigned int nIndexer = pindexPrev->nIndexer + 1;
+        if (nIndexer > nLegacy && nIndexer > nAuxPow) {
+            return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "bad-indexer-exceeds-both",
+                                 strprintf("indexer count since activation (%u) would exceed both legacy count (%u) and auxpow count (%u) since activation height %u",
+                                           nIndexer, nLegacy, nAuxPow, indexerParams.nActivationHeight));
+        }
+
+        // Skip difficulty check for indexer blocks (they don't do PoW)
+    } 
 
     // Check against checkpoints
     if (chainman.m_options.checkpoints_enabled) {

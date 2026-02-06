@@ -9,6 +9,7 @@
 #include <auxpow.h>
 #include <primitives/transaction.h>
 #include <primitives/pureheader.h>
+#include <primitives/indexer.h>
 #include <serialize.h>
 #include <uint256.h>
 #include <util/time.h>
@@ -27,6 +28,9 @@ public:
     // auxpow (if this is a merge-minded block)
     std::shared_ptr<CAuxPow> auxpow;
 
+    // indexer proof (if this is an indexer block)
+    std::shared_ptr<CIndexerProof> indexerProof;
+
     CBlockHeader()
     {
         SetNull();
@@ -36,14 +40,25 @@ public:
     {
         READWRITE(AsBase<CPureBlockHeader>(obj));
 
-        if (obj.IsAuxpow())
+        if (obj.IsIndexer())
         {
+            // Indexer block: read/write indexer proof
+            SER_READ(obj, obj.indexerProof = std::make_shared<CIndexerProof>());
+            assert(obj.indexerProof != nullptr);
+            READWRITE(*obj.indexerProof);
+            SER_READ(obj, obj.auxpow.reset());
+        }
+        else if (obj.IsAuxpow())
+        {
+            // Standard AuxPoW block
             SER_READ(obj, obj.auxpow = std::make_shared<CAuxPow>());
             assert(obj.auxpow != nullptr);
             READWRITE(*obj.auxpow);
+            SER_READ(obj, obj.indexerProof.reset());
         } else
         {
             SER_READ(obj, obj.auxpow.reset());
+            SER_READ(obj, obj.indexerProof.reset());
         }
     }
 
@@ -51,6 +66,7 @@ public:
     {
         CPureBlockHeader::SetNull();
         auxpow.reset();
+        indexerProof.reset();
     }
 
     /**
@@ -58,6 +74,12 @@ public:
      * the version accordingly.
      */
     void SetAuxpow (std::unique_ptr<CAuxPow> apow);
+
+    /**
+     * Set the block's indexer proof (or unset it).  This takes care of updating
+     * the version accordingly.
+     */
+    void SetIndexerProof(std::unique_ptr<CIndexerProof> proof);
 
 };
 
@@ -108,6 +130,7 @@ public:
         block.nBits          = nBits;
         block.nNonce         = nNonce;
         block.auxpow         = auxpow;
+        block.indexerProof   = indexerProof;
         return block;
     }
 
