@@ -265,7 +265,7 @@ public:
 
         // Indexer block parameters (testnet)
         consensus.indexerParams.nActivationHeight = 1403950;
-        // Cold wallet public key (x-only, 32 bytes) - same as mainnet for testing
+        // Cold wallet public key (x-only, 32 bytes) - testnet key, distinct from mainnet
         consensus.indexerParams.coldPubKey = "2eefee6aa733b034363cf5b8ab9c412bb5c481d1e62099370088dbb87f61c419"_hex_u8;
 
         // Anchor params: Note that the block after this height *must* also be checkpointed below.
@@ -598,7 +598,7 @@ public:
 
         // Indexer block parameters (regtest) - enabled from height 1 for testing
         consensus.indexerParams.nActivationHeight = 1;
-        // Cold wallet public key (x-only, 32 bytes) - same as mainnet for testing
+        // Cold wallet public key (x-only, 32 bytes) - regtest key, distinct from mainnet
         consensus.indexerParams.coldPubKey = "5cd26f06fb752947bd414bafeedbaefe5461c543e6f7b404a7900d0ad4f0247d"_hex_u8;
 
         // RegTest has no hard-coded anchor block

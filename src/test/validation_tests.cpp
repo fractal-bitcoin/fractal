@@ -26,16 +26,26 @@ static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
     int maxHalvings = 64;
     CAmount nInitialSubsidy = 25 * COIN;
 
-    CAmount nPreviousSubsidy = nInitialSubsidy * 2; // for height == 0
-    BOOST_CHECK_EQUAL(nPreviousSubsidy, nInitialSubsidy * 2);
-    for (int nHalvings = 0; nHalvings < maxHalvings; nHalvings++) {
+    // Height 1 pays the one-time premine; era 0 pays the full subsidy.
+    BOOST_CHECK_EQUAL(GetBlockSubsidy(0, consensusParams), nInitialSubsidy);
+    BOOST_CHECK_EQUAL(GetBlockSubsidy(consensusParams.nSubsidyHalvingInterval - 1, consensusParams), nInitialSubsidy);
+
+    // FIP-102: the first and second halvings activate together at the first
+    // interval boundary (subsidy quarters), every later boundary halves.
+    CAmount nPreviousSubsidy = nInitialSubsidy;
+    for (int nHalvings = 1; nHalvings < maxHalvings; nHalvings++) {
         int nHeight = nHalvings * consensusParams.nSubsidyHalvingInterval;
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
         BOOST_CHECK(nSubsidy <= nInitialSubsidy);
-        BOOST_CHECK_EQUAL(nSubsidy, nPreviousSubsidy / 2);
+        if (nHalvings == 1) {
+            BOOST_CHECK_EQUAL(nSubsidy, nPreviousSubsidy / 4);
+        } else {
+            BOOST_CHECK_EQUAL(nSubsidy, nPreviousSubsidy / 2);
+        }
         nPreviousSubsidy = nSubsidy;
     }
-    BOOST_CHECK_EQUAL(GetBlockSubsidy(maxHalvings * consensusParams.nSubsidyHalvingInterval, consensusParams), 0);
+    // The extra halving exhausts the 64-bit shift one boundary earlier than upstream.
+    BOOST_CHECK_EQUAL(GetBlockSubsidy((maxHalvings - 1) * consensusParams.nSubsidyHalvingInterval, consensusParams), 0);
 }
 
 static void TestBlockSubsidyHalvings(int nSubsidyHalvingInterval)
@@ -48,6 +58,8 @@ static void TestBlockSubsidyHalvings(int nSubsidyHalvingInterval)
 BOOST_AUTO_TEST_CASE(block_subsidy_test)
 {
     const auto chainParams = CreateChainParams(*m_node.args, ChainType::MAIN);
+    // Height 1 pays the one-time premine of half the maximum supply.
+    BOOST_CHECK_EQUAL(GetBlockSubsidy(1, chainParams->GetConsensus()), MAX_MONEY / 2);
     TestBlockSubsidyHalvings(chainParams->GetConsensus()); // As in main
     TestBlockSubsidyHalvings(150); // As in regtest
     TestBlockSubsidyHalvings(1000); // Just another interval
@@ -56,14 +68,20 @@ BOOST_AUTO_TEST_CASE(block_subsidy_test)
 BOOST_AUTO_TEST_CASE(subsidy_limit_test)
 {
     const auto chainParams = CreateChainParams(*m_node.args, ChainType::MAIN);
+    const auto& consensus = chainParams->GetConsensus();
     CAmount nSum = 0;
     for (int nHeight = 0; nHeight < 14000000; nHeight += 1000) {
-        CAmount nSubsidy = GetBlockSubsidy(nHeight, chainParams->GetConsensus());
+        CAmount nSubsidy = GetBlockSubsidy(nHeight, consensus);
         BOOST_CHECK(nSubsidy <= 25 * COIN);
         nSum += nSubsidy * 1000;
         BOOST_CHECK(MoneyRange(nSum));
     }
-    BOOST_CHECK_EQUAL(nSum, CAmount{2099999997690000});
+    // Eras (2.1M blocks each): 25 FB in era 0, then FIP-102's doubled first
+    // halving gives 6.25, 3.125, 1.5625, 0.78125, 0.390625 FB, and the
+    // sampled tail covers 1400 blocks of era 6 (0.1953125 FB):
+    //   2100e3 * (25 + 6.25 + 3.125 + 1.5625 + 0.78125 + 0.390625) FB
+    //   + 1400e3 * 0.1953125 FB = 78,203,125 FB.
+    BOOST_CHECK_EQUAL(nSum, CAmount{7820312500000000});
 }
 
 BOOST_AUTO_TEST_CASE(signet_parse_tests)
