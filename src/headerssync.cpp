@@ -21,6 +21,14 @@ constexpr size_t HEADER_COMMITMENT_PERIOD{624};
 //! received and validated against commitments.
 constexpr size_t REDOWNLOAD_BUFFER_SIZE{14827}; // 14827/624 = ~23.8 commitments
 
+//! Upper bound on the total serialized size of buffered redownloaded headers.
+//! Unlike upstream, a header here may carry a full CAuxPow (a parent-chain
+//! coinbase transaction plus Merkle branches) or a 168-byte indexer proof,
+//! so REDOWNLOAD_BUFFER_SIZE alone does not bound memory. This cap covers the
+//! honest worst case (14827 auxpow headers of a few KiB each) with headroom,
+//! while rejecting absurd per-header sizes.
+constexpr size_t REDOWNLOAD_BUFFER_MAX_BYTES{64 * 1024 * 1024}; // 64 MiB
+
 HeadersSyncState::HeadersSyncState(NodeId id, const Consensus::Params& consensus_params,
         const CBlockIndex* chain_start, const arith_uint256& minimum_required_work) :
     m_commit_offset(FastRandomContext().randrange<unsigned>(HEADER_COMMITMENT_PERIOD)),
@@ -269,7 +277,13 @@ bool HeadersSyncState::ValidateAndStoreRedownloadedHeader(const CBlockHeader& he
     }
 
     // Store this header for later processing.
+    size_t header_bytes{GetSerializeSize(header)};
+    if (m_redownload_buffer_bytes + header_bytes > REDOWNLOAD_BUFFER_MAX_BYTES) {
+        LogDebug(BCLog::NET, "Initial headers sync aborted with peer=%d: redownload buffer exceeds %zu bytes at height=%i\n", m_id, REDOWNLOAD_BUFFER_MAX_BYTES, next_height);
+        return false;
+    }
     m_redownloaded_headers.emplace_back(header);
+    m_redownload_buffer_bytes += header_bytes;
     m_redownload_buffer_last_height = next_height;
     m_redownload_buffer_last_hash = header.GetHash();
 
@@ -287,6 +301,7 @@ std::vector<CBlockHeader> HeadersSyncState::PopHeadersReadyForAcceptance()
             (m_redownloaded_headers.size() > 0 && m_process_all_remaining_headers)) {
         ret.emplace_back(m_redownloaded_headers.front().GetFullHeader(m_redownload_buffer_first_prev_hash));
         m_redownloaded_headers.pop_front();
+        m_redownload_buffer_bytes -= GetSerializeSize(ret.back());
         m_redownload_buffer_first_prev_hash = ret.back().GetHash();
     }
     return ret;

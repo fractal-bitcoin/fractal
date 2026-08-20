@@ -27,6 +27,7 @@ struct CompressedHeader {
     uint32_t nNonce{0};
 
     std::shared_ptr<CAuxPow> auxpow;
+    std::shared_ptr<CIndexerProof> indexerProof;
 
     CompressedHeader()
     {
@@ -41,6 +42,7 @@ struct CompressedHeader {
         nBits = header.nBits;
         nNonce = header.nNonce;
         auxpow = header.auxpow;
+        indexerProof = header.indexerProof;
     }
 
     CBlockHeader GetFullHeader(const uint256& hash_prev_block) {
@@ -52,6 +54,7 @@ struct CompressedHeader {
         ret.nBits = nBits;
         ret.nNonce = nNonce;
         ret.auxpow = auxpow;
+        ret.indexerProof = indexerProof;
         return ret;
     };
 };
@@ -250,6 +253,12 @@ private:
      *  until enough commitments have been verified; those are stored in
      *  m_redownloaded_headers */
     std::deque<CompressedHeader> m_redownloaded_headers;
+
+    /** Sum of the serialized sizes of the headers in m_redownloaded_headers.
+     *  Headers may carry a full CAuxPow (parent coinbase + Merkle branches)
+     *  or a 168-byte indexer proof, so a count bound alone does not bound
+     *  memory; this byte counter does. */
+    size_t m_redownload_buffer_bytes{0};
 
     /** Height of last header in m_redownloaded_headers */
     int64_t m_redownload_buffer_last_height{0};
