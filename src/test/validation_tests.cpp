@@ -68,16 +68,16 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
 
 BOOST_AUTO_TEST_CASE(signet_parse_tests)
 {
-    ArgsManager signet_argsman;
-    signet_argsman.ForceSetArg("-signetchallenge", "51"); // set challenge to OP_TRUE
-    const auto signet_params = CreateChainParams(signet_argsman, ChainType::SIGNET);
+    // Fractal Bitcoin does not support signet networks; exercise the
+    // block-solution checker with a locally constructed consensus params.
+    Consensus::Params params;
+    params.signet_challenge = {OP_TRUE};
     CBlock block;
-    BOOST_CHECK(signet_params->GetConsensus().signet_challenge == std::vector<uint8_t>{OP_TRUE});
     CScript challenge{OP_TRUE};
 
     // empty block is invalid
     BOOST_CHECK(!SignetTxs::Create(block, challenge));
-    BOOST_CHECK(!CheckSignetBlockSolution(block, signet_params->GetConsensus()));
+    BOOST_CHECK(!CheckSignetBlockSolution(block, params));
 
     // no witness commitment
     CMutableTransaction cb;
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(signet_parse_tests)
     block.vtx.push_back(MakeTransactionRef(cb));
     block.vtx.push_back(MakeTransactionRef(cb)); // Add dummy tx to exercise merkle root code
     BOOST_CHECK(!SignetTxs::Create(block, challenge));
-    BOOST_CHECK(!CheckSignetBlockSolution(block, signet_params->GetConsensus()));
+    BOOST_CHECK(!CheckSignetBlockSolution(block, params));
 
     // no header is treated valid
     std::vector<uint8_t> witness_commitment_section_141{0xaa, 0x21, 0xa9, 0xed};
@@ -95,14 +95,14 @@ BOOST_AUTO_TEST_CASE(signet_parse_tests)
     cb.vout.at(0).scriptPubKey = CScript{} << OP_RETURN << witness_commitment_section_141;
     block.vtx.at(0) = MakeTransactionRef(cb);
     BOOST_CHECK(SignetTxs::Create(block, challenge));
-    BOOST_CHECK(CheckSignetBlockSolution(block, signet_params->GetConsensus()));
+    BOOST_CHECK(CheckSignetBlockSolution(block, params));
 
     // no data after header, valid
     std::vector<uint8_t> witness_commitment_section_325{0xec, 0xc7, 0xda, 0xa2};
     cb.vout.at(0).scriptPubKey = CScript{} << OP_RETURN << witness_commitment_section_141 << witness_commitment_section_325;
     block.vtx.at(0) = MakeTransactionRef(cb);
     BOOST_CHECK(SignetTxs::Create(block, challenge));
-    BOOST_CHECK(CheckSignetBlockSolution(block, signet_params->GetConsensus()));
+    BOOST_CHECK(CheckSignetBlockSolution(block, params));
 
     // Premature end of data, invalid
     witness_commitment_section_325.push_back(0x01);
@@ -110,21 +110,21 @@ BOOST_AUTO_TEST_CASE(signet_parse_tests)
     cb.vout.at(0).scriptPubKey = CScript{} << OP_RETURN << witness_commitment_section_141 << witness_commitment_section_325;
     block.vtx.at(0) = MakeTransactionRef(cb);
     BOOST_CHECK(!SignetTxs::Create(block, challenge));
-    BOOST_CHECK(!CheckSignetBlockSolution(block, signet_params->GetConsensus()));
+    BOOST_CHECK(!CheckSignetBlockSolution(block, params));
 
     // has data, valid
     witness_commitment_section_325.push_back(0x00);
     cb.vout.at(0).scriptPubKey = CScript{} << OP_RETURN << witness_commitment_section_141 << witness_commitment_section_325;
     block.vtx.at(0) = MakeTransactionRef(cb);
     BOOST_CHECK(SignetTxs::Create(block, challenge));
-    BOOST_CHECK(CheckSignetBlockSolution(block, signet_params->GetConsensus()));
+    BOOST_CHECK(CheckSignetBlockSolution(block, params));
 
     // Extraneous data, invalid
     witness_commitment_section_325.push_back(0x00);
     cb.vout.at(0).scriptPubKey = CScript{} << OP_RETURN << witness_commitment_section_141 << witness_commitment_section_325;
     block.vtx.at(0) = MakeTransactionRef(cb);
     BOOST_CHECK(!SignetTxs::Create(block, challenge));
-    BOOST_CHECK(!CheckSignetBlockSolution(block, signet_params->GetConsensus()));
+    BOOST_CHECK(!CheckSignetBlockSolution(block, params));
 }
 
 //! Test retrieval of valid assumeutxo values.

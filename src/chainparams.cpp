@@ -23,24 +23,6 @@
 
 using util::SplitString;
 
-void ReadSigNetArgs(const ArgsManager& args, CChainParams::SigNetOptions& options)
-{
-    if (!args.GetArgs("-signetseednode").empty()) {
-        options.seeds.emplace(args.GetArgs("-signetseednode"));
-    }
-    if (!args.GetArgs("-signetchallenge").empty()) {
-        const auto signet_challenge = args.GetArgs("-signetchallenge");
-        if (signet_challenge.size() != 1) {
-            throw std::runtime_error("-signetchallenge cannot be multiple values.");
-        }
-        const auto val{TryParseHex<uint8_t>(signet_challenge[0])};
-        if (!val) {
-            throw std::runtime_error(strprintf("-signetchallenge must be hex, not '%s'.", signet_challenge[0]));
-        }
-        options.challenge.emplace(*val);
-    }
-}
-
 void ReadRegTestArgs(const ArgsManager& args, CChainParams::RegTestOptions& options)
 {
     if (auto value = args.GetBoolArg("-fastprune")) options.fastprune = *value;
@@ -115,12 +97,9 @@ std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, c
     case ChainType::TESTNET:
         return CChainParams::TestNet();
     case ChainType::TESTNET4:
-        return CChainParams::TestNet4();
-    case ChainType::SIGNET: {
-        auto opts = CChainParams::SigNetOptions{};
-        ReadSigNetArgs(args, opts);
-        return CChainParams::SigNet(opts);
-    }
+        throw std::runtime_error("testnet4 is not supported by Fractal Bitcoin; use mainnet, testnet3 (-chain=test) or regtest");
+    case ChainType::SIGNET:
+        throw std::runtime_error("signet is not supported by Fractal Bitcoin; use mainnet, testnet3 (-chain=test) or regtest");
     case ChainType::REGTEST: {
         auto opts = CChainParams::RegTestOptions{};
         ReadRegTestArgs(args, opts);

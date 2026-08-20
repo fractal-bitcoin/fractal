@@ -31,10 +31,6 @@ std::optional<ChainType> ChainTypeFromString(std::string_view chain)
         return ChainType::MAIN;
     } else if (chain == "test") {
         return ChainType::TESTNET;
-    } else if (chain == "testnet4") {
-        return ChainType::TESTNET4;
-    } else if (chain == "signet") {
-        return ChainType::SIGNET;
     } else if (chain == "regtest") {
         return ChainType::REGTEST;
     } else {
