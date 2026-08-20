@@ -163,13 +163,16 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 {
     assert(pindexLast != nullptr);
 
+    // Indexer blocks always use powLimit, including on regtest. This check
+    // must precede the no-retargeting shortcut below, otherwise regtest
+    // indexer blocks would be required to carry the previous block's nBits.
+    if (pblock->IsIndexer()) {
+        return UintToArith256(params.powLimit).GetCompact();
+    }
+
     // Special rule for regtest: we never retarget.
     if (params.fPowNoRetargeting) {
         return pindexLast->nBits;
-    }
-
-    if (pblock->IsIndexer()) {
-        return UintToArith256(params.powLimit).GetCompact();
     }
 
     assert(params.asertAnchorParams.nHeight > 0);
