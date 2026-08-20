@@ -644,12 +644,10 @@ BOOST_AUTO_TEST_CASE(util_GetChainTypeString)
 {
     TestArgsManager test_args;
     const auto testnet = std::make_pair("-testnet", ArgsManager::ALLOW_ANY);
-    const auto testnet4 = std::make_pair("-testnet4", ArgsManager::ALLOW_ANY);
     const auto regtest = std::make_pair("-regtest", ArgsManager::ALLOW_ANY);
-    test_args.SetupArgs({testnet, testnet4, regtest});
+    test_args.SetupArgs({testnet, regtest});
 
     const char* argv_testnet[] = {"cmd", "-testnet"};
-    const char* argv_testnet4[] = {"cmd", "-testnet4"};
     const char* argv_regtest[] = {"cmd", "-regtest"};
     const char* argv_test_no_reg[] = {"cmd", "-testnet", "-noregtest"};
     const char* argv_both[] = {"cmd", "-testnet", "-regtest"};
@@ -664,12 +662,6 @@ BOOST_AUTO_TEST_CASE(util_GetChainTypeString)
 
     BOOST_CHECK(test_args.ParseParameters(2, argv_testnet, error));
     BOOST_CHECK_EQUAL(test_args.GetChainTypeString(), "test");
-
-    BOOST_CHECK(test_args.ParseParameters(0, argv_testnet4, error));
-    BOOST_CHECK_EQUAL(test_args.GetChainTypeString(), "main");
-
-    BOOST_CHECK(test_args.ParseParameters(2, argv_testnet4, error));
-    BOOST_CHECK_EQUAL(test_args.GetChainTypeString(), "testnet4");
 
     BOOST_CHECK(test_args.ParseParameters(2, argv_regtest, error));
     BOOST_CHECK_EQUAL(test_args.GetChainTypeString(), "regtest");
@@ -1024,7 +1016,7 @@ BOOST_FIXTURE_TEST_CASE(util_ChainMerge, ChainMergeTestingSetup)
     // Results file is formatted like:
     //
     //   <input> || <output>
-    BOOST_CHECK_EQUAL(out_sha_hex, "9e60306e1363528bbc19a47f22bcede88e5d6815212f18ec8e6cdc4638dddab4");
+    BOOST_CHECK_EQUAL(out_sha_hex, "f0b3a3c29869edc765d579c928f7f1690a71fbb673b49ccf39cbc4de18156a0d");
 }
 
 BOOST_AUTO_TEST_CASE(util_ReadWriteSettings)

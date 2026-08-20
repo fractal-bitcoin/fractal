@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <chainparams.h>
+#include <consensus/params.h>
 #include <consensus/validation.h>
 #include <primitives/block.h>
 #include <signet.h>
@@ -19,7 +20,7 @@
 
 void initialize_signet()
 {
-    static const auto testing_setup = MakeNoLogFileContext<>(ChainType::SIGNET);
+    static const auto testing_setup = MakeNoLogFileContext<>(ChainType::REGTEST);
 }
 
 FUZZ_TARGET(signet, .init = initialize_signet)
@@ -29,6 +30,12 @@ FUZZ_TARGET(signet, .init = initialize_signet)
     if (!block) {
         return;
     }
-    (void)CheckSignetBlockSolution(*block, Params().GetConsensus());
-    (void)SignetTxs::Create(*block, ConsumeScript(fuzzed_data_provider));
+    // Fractal Bitcoin has no signet network; exercise the BIP325 checker with
+    // locally constructed consensus params carrying the fuzzed challenge.
+    const CScript challenge = ConsumeScript(fuzzed_data_provider);
+    Consensus::Params params{Params().GetConsensus()};
+    params.signet_blocks = true;
+    params.signet_challenge.assign(challenge.begin(), challenge.end());
+    (void)CheckSignetBlockSolution(*block, params);
+    (void)SignetTxs::Create(*block, challenge);
 }
