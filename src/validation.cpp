@@ -2062,7 +2062,9 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         return 0;
 
     CAmount nSubsidy = 25 * COIN;
-    // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
+    // Era 0 pays 25 FB. FIP-102 activates the first and second halvings
+    // together at the first interval boundary (block 2,100,000), so the
+    // subsidy quarters there and halves at every later boundary.
     nSubsidy >>= halvings;
     return nSubsidy;
 }
